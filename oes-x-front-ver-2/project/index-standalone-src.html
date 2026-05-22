@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ru" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>OES X · Личный кабинет — Инженер ГТК</title>
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <template id="__bundler_thumbnail" data-bg-color="#06090F">
+    <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+      <!-- OES cube on dark grid -->
+      <defs>
+        <pattern id="g" width="48" height="48" patternUnits="userSpaceOnUse">
+          <path d="M48 0H0v48" fill="none" stroke="rgba(14,122,104,0.10)" stroke-width="1"/>
+        </pattern>
+      </defs>
+      <rect width="1200" height="800" fill="#06090F"/>
+      <rect width="1200" height="800" fill="url(#g)"/>
+      <g transform="translate(420,180) scale(2.4)">
+        <path fill-rule="evenodd" clip-rule="evenodd" d="M215.178 358.422L83.6339 282.056V129.48L215.178 205.689V358.422ZM190.818 220.029V316.16L108.151 268.094V171.964L190.818 220.029Z" fill="#1DB89A"/>
+        <path d="M356.152 282.009L224.765 358.376V330.39L332.578 267.937V233.627L224.765 296.239V205.8L356.31 129.592V157.261L248.811 219.714V254.34L356.31 191.887L356.152 282.009Z" fill="#1DB89A"/>
+        <path d="M326.609 106.824L219.896 168.862L190.979 152.201L297.692 90.2223L273.174 75.8344L166.461 137.971L137.544 121.212L244.257 59.2329L219.739 44.845L88.352 121.212L219.896 197.42L350.97 121.212L326.609 106.824Z" fill="#1DB89A"/>
+        <path d="M219.972 27.8027L70 116.422V290.253L219.972 378.873L369.944 290.253V116.422L219.972 27.8027Z" stroke="#1DB89A" stroke-width="6.8169" fill="none"/>
+      </g>
+      <text x="600" y="700" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="22" fill="#1DB89A" letter-spacing="6">OES · AGENTS · ЛК</text>
+    </svg>
+  </template>
+  <div id="app"></div>
+
+  <!-- React + Babel -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <!-- Tweaks panel (host protocol + controls) -->
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+
+  <!-- Atoms -->
+  <script type="text/babel" src="icons.jsx"></script>
+  <script type="text/babel" src="parts.jsx"></script>
+  <script type="text/babel" src="data.jsx"></script>
+
+  <!-- Shell -->
+  <script type="text/babel" src="shell.jsx"></script>
+
+  <!-- Sections -->
+  <script type="text/babel" src="sections/home.jsx"></script>
+  <script type="text/babel" src="sections/various.jsx"></script>
+  <script type="text/babel" src="sections/workspace.jsx"></script>
+  <script type="text/babel" src="sections/create.jsx"></script>
+  <script type="text/babel" src="sections/marketplace.jsx"></script>
+  <script type="text/babel" src="sections/usage.jsx"></script>
+
+  <!-- App root -->
+  <script type="text/babel" src="app.jsx"></script>
+</body>
+</html>
