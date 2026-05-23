@@ -71,8 +71,11 @@ function SolutionHeader({ sol, version, historic, setRoute, openEdit, editInChat
       });
     }
   };
+  // «Редактировать» открывает полноценную страницу редактирования
+  // (превью в центре + чат с ботом справа на ≥1200px, снизу на <1200px).
+  // «Форкнуть в чат» по-прежнему уходит в чат-сессию с превью-плиткой.
   const handleEdit = () => {
-    if (editInChat) editInChat(sol.id, v, 'edit');
+    if (openEdit) openEdit(sol.id, v);
   };
   return (
     <div className="sv-header">
