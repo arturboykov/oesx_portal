@@ -309,7 +309,7 @@ function SolutionRow({ sol, alt, isOwner, canEdit, onView, onEdit, onToggle, onF
           fontFamily: 'var(--font-mono)', fontSize: 10,
           color: sol.published ? 'var(--pos)' : 'var(--fg-muted)'
         }}>
-          <span style={{ width: 5, height: 5, borderRadius: 999, background: sol.published ? 'var(--pos)' : 'var(--fg-dim)' }} />
+          {sol.published ? <IconCheck size={11} /> : <IconEdit size={11} />}
           {sol.published ? 'опубликовано' : 'черновик'}
         </span>
       </div>
@@ -964,6 +964,7 @@ function SectionSettings({ tweak, setRoute, impersonating }) {
 
   const tabs = [
   { id: 'profile', label: 'Профиль', icon: <IconUser size={13} /> },
+  { id: 'agent', label: 'Настройки агента', icon: <IconCpu size={13} /> },
   { id: 'channels', label: 'Каналы', icon: <IconLink size={13} />, count: OESDATA.channels.filter((c) => c.state === 'connected').length },
   { id: 'sources', label: 'Источники данных', icon: <IconDatabase size={13} />, count: sourcesByDomain.reduce((s, d) => s + d.sources.filter((x) => x.granted).length, 0) },
   { id: 'security', label: 'Безопасность', icon: <IconShield size={13} /> },
@@ -975,7 +976,7 @@ function SectionSettings({ tweak, setRoute, impersonating }) {
       <div className="page-head">
         <div>
           <div className="page-title">Аккаунт</div>
-          <div className="page-sub">Профиль · каналы · источники данных · безопасность</div>
+          <div className="page-sub">Профиль · настройки агента · каналы · источники данных · безопасность</div>
         </div>
       </div>
 
@@ -989,7 +990,8 @@ function SectionSettings({ tweak, setRoute, impersonating }) {
         )}
       </div>
 
-      {tab === 'profile' && <SettingsProfile me={me} />}
+      {tab === 'profile' && <SettingsProfile me={me} user={userRecord} />}
+      {tab === 'agent' && <SettingsAgent user={userRecord} />}
       {tab === 'channels' && <SettingsChannels />}
       {tab === 'sources' && <SettingsSources domains={userDomains} sourcesByDomain={sourcesByDomain} />}
       {tab === 'security' && <SettingsSecurity />}
@@ -1023,8 +1025,13 @@ function groupSourcesByDomain(allSources, userDomainIds) {
 }
 
 /* — Profile pane — */
-function SettingsProfile({ me }) {
-  const a = OESDATA.assistant;
+function SettingsProfile({ me, user }) {
+  const u = user || OESDATA.users[0];
+  const dockerShort = (u.dockerId || '').slice(0, 24) + '…';
+  const volume = `openclaw-${u.uuid}`;
+  const refresh = () => {
+    if (window.notify) window.notify({ title: 'Статус контейнера обновлён', body: 'Running', kind: 'success' });
+  };
   return (
     <>
       <div className="section-head"><span className="sh-title">Профиль</span><div className="sh-line" /></div>
@@ -1046,57 +1053,54 @@ function SettingsProfile({ me }) {
         </div>
       </div>
 
-      {/* — Ассистент: контейнер + агенты (read-only описание) — */}
+      {/* — Пользователь и контейнер (1 контейнер = 1 пользователь) — */}
       <div className="section-head">
-        <span className="sh-title">Ассистент</span>
+        <span className="sh-title">Окружение</span>
         <div className="sh-line" />
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-        {/* Контейнер */}
+        {/* ПОЛЬЗОВАТЕЛЬ */}
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 18px', borderBottom: '0.5px solid var(--border)' }}>
-            <IconCpu size={13} style={{ color: 'var(--teal-400)' }} />
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--fg-muted)' }}>Контейнер</span>
+          <div style={{ padding: '12px 18px', borderBottom: '0.5px solid var(--border)' }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--fg-muted)' }}>Пользователь</span>
           </div>
           <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <span style={{ flex: 1, fontFamily: 'var(--font-sans)', fontSize: 13, color: 'var(--fg-muted)' }}>Статус</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-mono)', fontSize: 11, padding: '3px 9px', borderRadius: 999, background: 'rgba(29,184,154,0.10)', border: '0.5px solid rgba(29,184,154,0.30)', color: 'var(--pos)' }}>
-                <span className="dot dot-pos" /> {a.container.status}
-              </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ flex: 1, fontFamily: 'var(--font-sans)', fontSize: 13, color: 'var(--fg-muted)' }}>ID</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 240 }} title={u.uuid}>{u.uuid}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ flex: 1, fontFamily: 'var(--font-sans)', fontSize: 13, color: 'var(--fg-muted)' }}>Docker ID</span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180 }} title={a.container.dockerId}>{a.container.dockerId}</span>
+              <span style={{ flex: 1, fontFamily: 'var(--font-sans)', fontSize: 13, color: 'var(--fg-muted)' }}>Email</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg)' }}>{u.email}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ flex: 1, fontFamily: 'var(--font-sans)', fontSize: 13, color: 'var(--fg-muted)' }}>Volume</span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }} title={a.container.volume}>{a.container.volume}</span>
+              <span style={{ flex: 1, fontFamily: 'var(--font-sans)', fontSize: 13, color: 'var(--fg-muted)' }}>Создан</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg)' }}>{u.containerCreated}</span>
             </div>
           </div>
         </div>
 
-        {/* Агенты */}
+        {/* КОНТЕЙНЕР */}
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 18px', borderBottom: '0.5px solid var(--border)' }}>
-            <IconBrain size={13} style={{ color: 'var(--teal-400)' }} />
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--fg-muted)' }}>Агенты · {a.agents.length}</span>
+          <div style={{ padding: '12px 18px', borderBottom: '0.5px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--fg-muted)' }}>Контейнер</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: 'var(--font-mono)', fontSize: 10, padding: '2px 8px', borderRadius: 999, background: 'rgba(29,184,154,0.10)', border: '0.5px solid rgba(29,184,154,0.30)', color: 'var(--pos)' }}>
+              <span className="dot dot-pos" /> Running
+            </span>
+            <span style={{ flex: 1 }} />
+            <button onClick={refresh} style={{ fontFamily: 'var(--font-sans)', fontSize: 12, color: 'var(--teal-400)', background: 'transparent', border: 0, cursor: 'pointer' }}>Обновить</button>
           </div>
-          <div>
-            {a.agents.map((ag, i) => (
-              <div key={ag.name} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px', borderBottom: i < a.agents.length - 1 ? '0.5px solid var(--border)' : 'none' }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: 'var(--font-sans)', fontSize: 13, fontWeight: 500, color: 'var(--fg)' }}>{ag.name}</div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-muted)', marginTop: 2 }}>{ag.role}</div>
-                </div>
-                <Chip kind={ag.primary ? 'neutral' : 'command'}>{ag.model}</Chip>
-              </div>
-            ))}
+          <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ flex: 1, fontFamily: 'var(--font-sans)', fontSize: 13, color: 'var(--fg-muted)' }}>Docker ID</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg)' }} title={u.dockerId}>{dockerShort}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ flex: 1, fontFamily: 'var(--font-sans)', fontSize: 13, color: 'var(--fg-muted)' }}>Volume</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 240 }} title={volume}>{volume}</span>
+            </div>
           </div>
         </div>
-      </div>
-      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-muted)', letterSpacing: '0.04em', marginTop: 8 }}>
-        Тонкая настройка агента и саб-агентов — во вкладке «Источники данных».
       </div>
     </>);
 
@@ -1151,24 +1155,6 @@ function SettingsSources({ domains, sourcesByDomain }) {
   const [openIds, setOpenIds] = React.useState(() => domains.map((d) => d.id));
   const toggle = (id) => setOpenIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
 
-  // «Моё окружение» — саб-агенты и подключённые пользователем MCP/API
-  const [subagents, setSubagents] = React.useState([
-    { id: 'sa-base', name: 'Диспетчер смен', model: 'CLAUDE-OPUS-4-6', task: 'Готовит сводки по сменам и простоям парка' },
-  ]);
-  const [connectors, setConnectors] = React.useState([]);
-  const [modal, setModal] = React.useState(null); // 'subagent' | 'connector'
-
-  const addSubagent = (sa) => {
-    setSubagents((p) => [{ id: 'sa-' + makeShortId(), ...sa }, ...p]);
-    setModal(null);
-    if (window.notify) window.notify({ title: 'Саб-агент создан', body: sa.name, kind: 'success' });
-  };
-  const addConnector = (c) => {
-    setConnectors((p) => [{ id: 'cn-' + makeShortId(), ...c }, ...p]);
-    setModal(null);
-    if (window.notify) window.notify({ title: c.type === 'mcp' ? 'MCP-сервер подключён' : 'API подключён', body: c.name, kind: 'success' });
-  };
-
   return (
     <>
       <div className="section-head">
@@ -1180,58 +1166,9 @@ function SettingsSources({ domains, sourcesByDomain }) {
         <IconShield size={16} style={{ color: 'var(--teal-400)' }} />
         <div style={{ flex: 1, fontFamily: 'var(--font-sans)', fontSize: 12, color: 'var(--fg-muted)', lineHeight: 1.55 }}>
           Источники сгруппированы по доменам, к которым у вас выдан доступ.
-          Свои саб-агенты и MCP/API можно добавить в блоке «Моё окружение» ниже.
+          Свои саб-агенты и MCP/API настраиваются во вкладке «Настройки агента».
         </div>
       </div>
-
-      {/* — Моё окружение — */}
-      <div className="section-head">
-        <span className="sh-title">Моё окружение</span>
-        <div className="sh-line" />
-      </div>
-      <div style={{ background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: 'var(--r-lg)', overflow: 'hidden', marginBottom: 22 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px', background: 'var(--surface-2)', borderBottom: '0.5px solid var(--border)' }}>
-          <IconBrain size={13} style={{ color: 'var(--teal-400)' }} />
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--fg)' }}>Саб-агенты · {subagents.length}</span>
-          <span style={{ flex: 1 }} />
-          <button className="btn btn-ghost btn-sm" onClick={() => setModal('subagent')}><IconPlus size={11} /> Создать саб-агента</button>
-        </div>
-        {subagents.length === 0 ?
-          <div style={{ padding: 16, textAlign: 'center', fontFamily: 'var(--font-sans)', fontSize: 12, color: 'var(--fg-muted)' }}>Саб-агентов пока нет</div> :
-          subagents.map((sa) =>
-            <div key={sa.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 16px', borderBottom: '0.5px solid var(--border)' }}>
-              <span style={{ width: 30, height: 30, borderRadius: 6, background: 'var(--teal-dim)', border: '0.5px solid var(--border-strong)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'var(--teal-400)' }}><IconBrain size={14} /></span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: 'var(--font-sans)', fontSize: 13, fontWeight: 500, color: 'var(--fg)' }}>{sa.name}</div>
-                <div style={{ fontFamily: 'var(--font-sans)', fontSize: 11, color: 'var(--fg-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sa.task}</div>
-              </div>
-              <Chip kind="command">{sa.model}</Chip>
-              <button className="icon-btn" style={{ width: 26, height: 26 }} title="Удалить" onClick={() => setSubagents((p) => p.filter((x) => x.id !== sa.id))}><IconTrash size={11} /></button>
-            </div>)
-        }
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px', background: 'var(--surface-2)', borderTop: '0.5px solid var(--border)', borderBottom: connectors.length ? '0.5px solid var(--border)' : 'none' }}>
-          <IconWrench size={13} style={{ color: 'var(--teal-400)' }} />
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--fg)' }}>MCP / API · {connectors.length}</span>
-          <span style={{ flex: 1 }} />
-          <button className="btn btn-ghost btn-sm" onClick={() => setModal('connector')}><IconPlus size={11} /> Подключить MCP / API</button>
-        </div>
-        {connectors.length === 0 ?
-          <div style={{ padding: 16, textAlign: 'center', fontFamily: 'var(--font-sans)', fontSize: 12, color: 'var(--fg-muted)' }}>Свои MCP/API не подключены</div> :
-          connectors.map((c) =>
-            <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 16px', borderBottom: '0.5px solid var(--border)' }}>
-              <span style={{ width: 30, height: 30, borderRadius: 6, background: 'var(--surface-2)', border: '0.5px solid var(--border)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'var(--teal-400)' }}>{c.type === 'mcp' ? <IconWrench size={14} /> : <IconLink size={14} />}</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: 'var(--font-sans)', fontSize: 13, fontWeight: 500, color: 'var(--fg)' }}>{c.name}</div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.endpoint}</div>
-              </div>
-              <Chip kind="neutral">{c.type === 'mcp' ? 'MCP' : 'API'}</Chip>
-              <button className="icon-btn" style={{ width: 26, height: 26 }} title="Удалить" onClick={() => setConnectors((p) => p.filter((x) => x.id !== c.id))}><IconTrash size={11} /></button>
-            </div>)
-        }
-      </div>
-
-      {modal === 'subagent' && <SubagentModal onClose={() => setModal(null)} onCreate={addSubagent} />}
-      {modal === 'connector' && <ConnectorModal onClose={() => setModal(null)} onCreate={addConnector} />}
 
       {sourcesByDomain.map(({ domain, sources, mcps }) => {
         const open = openIds.includes(domain.id);
@@ -1444,6 +1381,168 @@ function ConnectorModal({ onClose, onCreate }) {
   );
 }
 
+/* — Настройки агента: основной агент, саб-агенты, MCP-серверы.
+   Используется в Аккаунте пользователя и в Админ → Пользователи (для редактирования админом).
+   1 контейнер = 1 пользователь. */
+const DEFAULT_AGENT_PROMPT = `You are a personal AI workspace assistant.
+
+When the user asks for code, SQL, dashboards, charts, HTML, or any technical output — delegate to the developer sub-agent.
+
+CALL sessions_recent WITH EXACTLY THESE 3 PARAMETERS AND NOTHING ELSE: user_id, limit=20, after=null.`;
+
+const DEFAULT_SUBAGENT_PROMPT = `You are an expert software developer. You write clean, efficient, production-ready code.
+## Dashboards & HTML output When asked for a dashboard, chart, report, visualization — produce a self-contained HTML file with inline styles.`;
+
+function SettingsAgent({ user, admin }) {
+  const [model, setModel] = React.useState('default');
+  const [prompt, setPrompt] = React.useState(DEFAULT_AGENT_PROMPT);
+  const promptRef = React.useRef(null);
+  React.useEffect(() => {
+    const ta = promptRef.current; if (!ta) return;
+    ta.style.height = 'auto';
+    ta.style.height = Math.min(ta.scrollHeight, 600) + 'px';
+  }, [prompt]);
+
+  const [subagents, setSubagents] = React.useState([
+    { id: 'sa-dev', name: 'Разработчик', subId: 'openai/claude-sonnet-4-5', instructions: DEFAULT_SUBAGENT_PROMPT },
+  ]);
+  const [addingSub, setAddingSub] = React.useState(false);
+  const blankSub = { name: '', subId: '', model: 'По умолчанию', instructions: '' };
+  const [subForm, setSubForm] = React.useState(blankSub);
+
+  const [mcps, setMcps] = React.useState([
+    { id: 'mcp-shift', name: 'Оценка смены', url: 'https://shift-rating-mcp-port.oeswork.io/mcp', transport: 'streamable-http' },
+  ]);
+  const [addingMcp, setAddingMcp] = React.useState(false);
+  const blankMcp = { name: '', url: '' };
+  const [mcpForm, setMcpForm] = React.useState(blankMcp);
+
+  const addSub = () => {
+    if (!subForm.name.trim() || !subForm.subId.trim()) return;
+    setSubagents((p) => [...p, { id: 'sa-' + makeShortId(), name: subForm.name.trim(), subId: subForm.subId.trim(), instructions: subForm.instructions || 'Без инструкций' }]);
+    setSubForm(blankSub); setAddingSub(false);
+    if (window.notify) window.notify({ title: 'Саб-агент добавлен', body: subForm.name.trim(), kind: 'success' });
+  };
+  const addMcp = () => {
+    if (!mcpForm.name.trim() || !mcpForm.url.trim()) return;
+    setMcps((p) => [...p, { id: 'mcp-' + makeShortId(), name: mcpForm.name.trim(), url: mcpForm.url.trim(), transport: 'streamable-http' }]);
+    setMcpForm(blankMcp); setAddingMcp(false);
+    if (window.notify) window.notify({ title: 'MCP-сервер добавлен', body: mcpForm.name.trim(), kind: 'success' });
+  };
+  const save = () => {
+    if (window.notify) window.notify({ title: 'Контейнер перезапущен', body: `Настройки агента сохранены${admin && user ? ` для ${user.name}` : ''}`, kind: 'success' });
+  };
+
+  const cardHead = (icon, label) => (
+    <div style={{ padding: '10px 18px', borderBottom: '0.5px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
+      {icon}
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--fg-muted)' }}>{label}</span>
+    </div>
+  );
+
+  return (
+    <>
+      {/* ОСНОВНОЙ АГЕНТ */}
+      <div className="card" style={{ padding: 0, overflow: 'hidden', marginBottom: 12 }}>
+        {cardHead(<IconCpu size={13} style={{ color: 'var(--teal-400)' }} />, 'Основной агент')}
+        <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="field-stack">
+            <div className="field-label">Модель</div>
+            <select className="input" value={model} onChange={(e) => setModel(e.target.value)}>
+              <option value="default">По умолчанию (из конфига)</option>
+              <option value="claude-opus-4-6">CLAUDE-OPUS-4-6</option>
+              <option value="claude-sonnet-4-5">CLAUDE-SONNET-4-5</option>
+              <option value="claude-haiku-4-5">CLAUDE-HAIKU-4-5</option>
+              <option value="gpt-5-4">GPT-5.4-2026-03-05</option>
+              <option value="grok-4-20">GROK-4.20-0309</option>
+            </select>
+          </div>
+          <div className="field-stack">
+            <div className="field-label">Системные инструкции</div>
+            <textarea ref={promptRef} className="autogrow" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Переопределите системный промпт агента" />
+            <div style={{ fontFamily: 'var(--font-sans)', fontSize: 11, color: 'var(--fg-muted)' }}>Переопределяет системный промпт агента</div>
+          </div>
+        </div>
+      </div>
+
+      {/* САБ-АГЕНТЫ */}
+      <div className="card" style={{ padding: 0, overflow: 'hidden', marginBottom: 12 }}>
+        {cardHead(<IconBrain size={13} style={{ color: 'var(--teal-400)' }} />, `Саб-агенты · ${subagents.length}`)}
+        <div style={{ padding: 14 }}>
+          {subagents.map((sa) => (
+            <div key={sa.id} style={{ padding: '12px 14px', border: '0.5px solid var(--border)', borderRadius: 'var(--r-md)', background: 'var(--surface-2)', marginBottom: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 4 }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontFamily: 'var(--font-sans)', fontSize: 13, fontWeight: 500, color: 'var(--fg)' }}>{sa.name}</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-muted)', marginTop: 2 }}>{sa.subId}</div>
+                </div>
+                <button onClick={() => setSubagents((p) => p.filter((x) => x.id !== sa.id))} style={{ background: 'transparent', border: 0, color: 'var(--neg)', fontFamily: 'var(--font-sans)', fontSize: 12, cursor: 'pointer' }}>Удалить</button>
+              </div>
+              <div style={{ fontFamily: 'var(--font-sans)', fontSize: 11, color: 'var(--fg-muted)', lineHeight: 1.45, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                {sa.instructions}
+              </div>
+            </div>
+          ))}
+          {addingSub ? (
+            <div style={{ padding: 14, border: '0.5px solid var(--teal-400)', borderRadius: 'var(--r-md)', background: 'var(--surface-2)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <input className="input" placeholder="Имя саб-агента" value={subForm.name} onChange={(e) => setSubForm({ ...subForm, name: e.target.value })} />
+              <input className="input mono" placeholder="ID (латиница, без пробелов)" value={subForm.subId} onChange={(e) => setSubForm({ ...subForm, subId: e.target.value.replace(/\s+/g, '') })} />
+              <select className="input" value={subForm.model} onChange={(e) => setSubForm({ ...subForm, model: e.target.value })}>
+                <option>По умолчанию</option>
+                <option>CLAUDE-OPUS-4-6</option>
+                <option>CLAUDE-SONNET-4-5</option>
+                <option>GPT-5.4-2026-03-05</option>
+              </select>
+              <textarea className="textarea" placeholder="Системные инструкции саб-агента…" rows={3} value={subForm.instructions} onChange={(e) => setSubForm({ ...subForm, instructions: e.target.value })} />
+              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                <button className="btn btn-primary btn-sm" disabled={!subForm.name.trim() || !subForm.subId.trim()} onClick={addSub}>Добавить</button>
+                <button className="btn btn-neutral btn-sm" onClick={() => { setAddingSub(false); setSubForm(blankSub); }}>Отмена</button>
+              </div>
+            </div>
+          ) : (
+            <button className="btn btn-ghost btn-sm" onClick={() => setAddingSub(true)}><IconPlus size={11} /> Добавить саб-агента</button>
+          )}
+        </div>
+      </div>
+
+      {/* MCP СЕРВЕРЫ */}
+      <div className="card" style={{ padding: 0, overflow: 'hidden', marginBottom: 14 }}>
+        {cardHead(<IconWrench size={13} style={{ color: 'var(--teal-400)' }} />, `MCP серверы · ${mcps.length}`)}
+        <div style={{ padding: 14 }}>
+          {mcps.map((m) => (
+            <div key={m.id} style={{ padding: '12px 14px', border: '0.5px solid var(--border)', borderRadius: 'var(--r-md)', background: 'var(--surface-2)', marginBottom: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontFamily: 'var(--font-sans)', fontSize: 13, fontWeight: 500, color: 'var(--fg)' }}>{m.name}</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg-muted)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.url}</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-muted)', marginTop: 2 }}>{m.transport}</div>
+                </div>
+                <button onClick={() => setMcps((p) => p.filter((x) => x.id !== m.id))} style={{ background: 'transparent', border: 0, color: 'var(--neg)', fontFamily: 'var(--font-sans)', fontSize: 12, cursor: 'pointer' }}>Удалить</button>
+              </div>
+            </div>
+          ))}
+          {addingMcp ? (
+            <div style={{ padding: 14, border: '0.5px solid var(--teal-400)', borderRadius: 'var(--r-md)', background: 'var(--surface-2)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <input className="input" placeholder="Название" value={mcpForm.name} onChange={(e) => setMcpForm({ ...mcpForm, name: e.target.value })} />
+              <input className="input mono" placeholder="URL https://…" value={mcpForm.url} onChange={(e) => setMcpForm({ ...mcpForm, url: e.target.value })} />
+              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                <button className="btn btn-primary btn-sm" disabled={!mcpForm.name.trim() || !mcpForm.url.trim()} onClick={addMcp}>Добавить</button>
+                <button className="btn btn-neutral btn-sm" onClick={() => { setAddingMcp(false); setMcpForm(blankMcp); }}>Отмена</button>
+              </div>
+            </div>
+          ) : (
+            <button className="btn btn-ghost btn-sm" onClick={() => setAddingMcp(true)}><IconPlus size={11} /> Добавить сервер</button>
+          )}
+        </div>
+      </div>
+
+      <button className="btn btn-primary" style={{ width: '100%', padding: '12px 18px', fontSize: 13, justifyContent: 'center' }} onClick={save}>
+        Сохранить и перезапустить контейнер
+      </button>
+    </>
+  );
+}
+
 function SettingsSecurity() {
   return (
     <>
@@ -1509,4 +1608,4 @@ function RowToggle({ title, desc, value, disabled }) {
 
 }
 
-export { SectionSolutions, SectionMemory, SectionSources, SectionChannels, SectionSupport, SectionSettings, VersionHistoryModal };
+export { SectionSolutions, SectionMemory, SectionSources, SectionChannels, SectionSupport, SectionSettings, VersionHistoryModal, SettingsAgent };

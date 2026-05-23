@@ -70,6 +70,11 @@ export default function App() {
     setRoute('chat');
   };
 
+  const openChatHistory = () => {
+    setChatTrigger({ mode: 'history', ts: Date.now() });
+    setRoute('chat');
+  };
+
   // Open create flow in EDIT mode for an existing solution version
   const openEdit = (solutionId, fromVersion) => {
     const sol = OESDATA.solutions.find((s) => s.id === solutionId);
@@ -127,7 +132,7 @@ export default function App() {
   const sectionMap = {
     chat:        <SectionChat        setRoute={setRoute} openCreate={openCreate} openCreatePage={openCreatePage} openSolution={openSolution} tweak={t} trigger={chatTrigger} clearTrigger={() => setChatTrigger(null)} impersonating={impersonating} />,
     solutions:   <SectionSolutions   setRoute={setRoute} openCreate={openCreate} openSolution={openSolution} openEdit={openEdit} editInChat={editInChat} tweak={t} />,
-    create:      <SectionCreate      setRoute={setRoute} tweak={t} kind={createKind} setKind={setCreateKind} prefill={createPrefill} clearPrefill={() => setCreatePrefill(null)} />,
+    create:      <SectionCreate      setRoute={setRoute} tweak={t} kind={createKind} setKind={setCreateKind} prefill={createPrefill} clearPrefill={() => setCreatePrefill(null)} startNewChat={startNewChat} openChatHistory={openChatHistory} />,
     usage:       <SectionUsage       setRoute={setRoute} tweak={t} />,
     support:     <SectionSupport     tweak={t} />,
     settings:    <SectionSettings    tweak={t} setRoute={setRoute} impersonating={impersonating} />,

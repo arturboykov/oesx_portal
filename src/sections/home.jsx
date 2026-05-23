@@ -43,14 +43,16 @@ function SectionChat({ setRoute, openCreate, openCreatePage, openSolution, tweak
     // eslint-disable-next-line
   }, []);
 
-  // Handle external triggers (sidebar «Создать решение», «Новый чат» from menus,
-  // and «Редактировать» / «Форкнуть в чат» from solution view)
+  // Handle external triggers (sidebar «Создать решение», «Новый чат» / «История»
+  // from edit page, and «Редактировать» / «Форкнуть в чат» from solution view)
   React.useEffect(() => {
     if (!trigger) return;
     if (trigger.mode === 'create') {
       newChat({ kind: trigger.kind || 'dash' });
     } else if (trigger.mode === 'new') {
       newChat();
+    } else if (trigger.mode === 'history') {
+      setHistoryOpen(true);
     } else if (trigger.mode === 'editSol') {
       startEditFromSolution(trigger.solutionId, trigger.fromVersion, trigger.intent);
     }
@@ -222,15 +224,6 @@ function SectionChat({ setRoute, openCreate, openCreatePage, openSolution, tweak
 
   const isEmpty = messages.length === 0 && !flow;
 
-  // Header subtitle: id when editing/forking an existing solution, else brand line.
-  const sourceSol = flow?.params?.sourceSolutionId
-    ? OESDATA.solutions.find((s) => s.id === flow.params.sourceSolutionId)
-    : null;
-  const activeChat = activeChatId ? history.find((c) => c.id === activeChatId) : null;
-  const headerSubtitle = activeChat
-    ? activeChat.preview
-    : sourceSol ? `id: ${sourceSol.shortId}` : 'диалог с OpenClaw';
-
   const composer = (
     <ChatComposer
       ref={composerRef}
@@ -240,6 +233,7 @@ function SectionChat({ setRoute, openCreate, openCreatePage, openSolution, tweak
       onCreate={(k) => newChat({ kind: k })}
       flow={flow}
       hero={isEmpty}
+      showCreate={isEmpty}
     />
   );
 
@@ -249,7 +243,6 @@ function SectionChat({ setRoute, openCreate, openCreatePage, openSolution, tweak
         <ChatHeader
           name={chatName}
           onRename={setChatName}
-          subtitle={headerSubtitle}
           autoEditKey={titleEditTick}
           historyOpen={historyOpen}
           setHistoryOpen={setHistoryOpen}
@@ -342,14 +335,11 @@ function EditableChatTitle({ value, onChange, autoEditKey }) {
   );
 }
 
-function ChatHeader({ name, onRename, subtitle, autoEditKey, historyOpen, setHistoryOpen, historyCount, onNewChat }) {
+function ChatHeader({ name, onRename, autoEditKey, historyOpen, setHistoryOpen, historyCount, onNewChat }) {
   return (
     <div className="chat-header">
-      <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1, gap: 1 }}>
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center' }}>
         <EditableChatTitle value={name} onChange={onRename} autoEditKey={autoEditKey} />
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--fg-muted)', letterSpacing: '0.10em', marginTop: 2, paddingLeft: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {subtitle}
-        </div>
       </div>
       <button
         className={`btn btn-neutral btn-sm ${historyOpen ? 'active' : ''}`}
@@ -555,11 +545,43 @@ function PreviewOverlay({ flow, name, onClose, onPublish }) {
 }
 
 /* ─── Composer ─── */
-const ChatComposer = React.forwardRef(function ChatComposer({ draft, setDraft, onSend, onCreate, flow, hero }, ref) {
+const ChatComposer = React.forwardRef(function ChatComposer({ draft, setDraft, onSend, onCreate, flow, hero, showCreate }, ref) {
   const inputRef = React.useRef(null);
+  const fileRef = React.useRef(null);
+  const [attachment, setAttachment] = React.useState(null);
   React.useImperativeHandle(ref, () => ({
     focus: () => inputRef.current?.focus(),
   }));
+
+  // Auto-grow textarea up to ~15 rows. Cap enforced by CSS max-height: 310px on .chat-composer-box textarea.
+  React.useEffect(() => {
+    const ta = inputRef.current;
+    if (!ta) return;
+    ta.style.height = 'auto';
+    ta.style.height = Math.min(ta.scrollHeight, 310) + 'px';
+  }, [draft]);
+
+  const onPickFile = (e) => {
+    const f = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!f) return;
+    const MAX = 25 * 1024 * 1024;
+    if (f.size > MAX) {
+      window.notify && window.notify({
+        title: 'Файл слишком большой',
+        body: `${f.name} · ${(f.size / 1024 / 1024).toFixed(1)} МБ · максимум 25 МБ`,
+        kind: 'error',
+      });
+      return;
+    }
+    setAttachment({ name: f.name, size: f.size });
+  };
+
+  const handleSend = () => {
+    onSend();
+    setAttachment(null);
+  };
+
   const disabled = flow && flow.previewState === 'generating';
   const placeholder = disabled
     ? 'OpenClaw собирает превью…'
@@ -569,30 +591,43 @@ const ChatComposer = React.forwardRef(function ChatComposer({ draft, setDraft, o
 
   return (
     <div className="chat-composer" style={hero ? { borderTop: 0, background: 'transparent', padding: 0 } : undefined}>
+      {attachment && (
+        <div style={{ maxWidth: 820, margin: '0 auto 6px', display: 'flex' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 999, background: 'var(--teal-dim)', border: '0.5px solid var(--border-strong)', fontFamily: 'var(--font-sans)', fontSize: 11, color: 'var(--teal-400)' }}>
+            <IconPaperclip size={10} /> {attachment.name}
+            <span style={{ color: 'var(--fg-muted)', fontFamily: 'var(--font-mono)', fontSize: 10 }}>· {(attachment.size / 1024 / 1024).toFixed(2)} МБ</span>
+            <button className="icon-btn" style={{ width: 16, height: 16, border: 'none', background: 'transparent', color: 'var(--fg-muted)' }} onClick={() => setAttachment(null)} title="Убрать"><IconX size={9} /></button>
+          </span>
+        </div>
+      )}
       <div className={`chat-composer-box ${disabled ? 'disabled' : ''}`}>
         <textarea
           ref={inputRef}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
           disabled={disabled}
           placeholder={placeholder}
           rows={1} />
-        <button className="icon-btn" style={{ width: 30, height: 30 }} disabled={disabled} title="Прикрепить">
+        <input ref={fileRef} type="file" style={{ display: 'none' }} onChange={onPickFile} />
+        <button className="icon-btn" style={{ width: 30, height: 30 }} disabled={disabled}
+          title="Прикрепить файл (до 25 МБ)" onClick={() => fileRef.current?.click()}>
           <IconPaperclip size={13} />
         </button>
         <button
           className="icon-btn"
           style={{ width: 30, height: 30, background: 'var(--teal-400)', color: 'var(--fg-on-teal)', borderColor: 'var(--teal-400)', opacity: disabled || !draft.trim() ? 0.5 : 1 }}
           disabled={disabled || !draft.trim()}
-          onClick={onSend}
+          onClick={handleSend}
           title="Отправить">
           <IconSend size={13} />
         </button>
       </div>
-      <div className="chat-composer-chips" style={{ justifyContent: 'center' }}>
-        <CreateSolutionDropdown onPick={onCreate} disabled={disabled} openUp={!hero} />
-      </div>
+      {showCreate && (
+        <div className="chat-composer-chips" style={{ justifyContent: 'center' }}>
+          <CreateSolutionDropdown onPick={onCreate} disabled={disabled} openUp={!hero} />
+        </div>
+      )}
     </div>);
 
 });

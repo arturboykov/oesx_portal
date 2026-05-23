@@ -3,8 +3,10 @@ import {
   IconRefresh, IconPlus, IconX, IconShield, CubeLogo, IconChevronDown, IconDatabase,
   IconCpu, IconLink, IconWrench, IconBrain, IconUsers, IconSearch, IconLogOut,
   IconEdit, IconTrash, IconUser, IconClock, IconLock, IconCheck, IconAlertCircle,
+  IconBookOpen,
 } from '../icons.jsx';
 import { OESDATA } from '../data.jsx';
+import { SettingsAgent } from './various.jsx';
 
 /* Администрирование — два таба: Домены и Пользователи. */
 
@@ -144,7 +146,13 @@ function DomainBody({ d, compact, onAddResource }) {
           <button className="btn btn-ghost btn-sm" onClick={() => onAddResource('mcp')}><IconPlus size={10} /> MCP</button>
           <button className="btn btn-ghost btn-sm" onClick={() => onAddResource('api')}><IconPlus size={10} /> API</button>
           <button className="btn btn-ghost btn-sm" onClick={() => onAddResource('files')}><IconPlus size={10} /> Файлы</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => onAddResource('context')}><IconPlus size={10} /> Контекст</button>
+        </div>
+      }
+      {/* context — динамический textarea, до 600px высоты */}
+      {!compact &&
+        <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="dom-section-h"><IconBookOpen size={11} /> Контекст домена</div>
+          <DomainContextField domain={d} />
         </div>
       }
       {/* db */}
@@ -241,6 +249,21 @@ function DomainBody({ d, compact, onAddResource }) {
         </div>
       )}
     </div>
+  );
+}
+
+/* — Контекст домена: текстовое поле с динамической высотой до 600px — */
+function DomainContextField({ domain }) {
+  const [val, setVal] = React.useState(domain.contextHint || '');
+  const ref = React.useRef(null);
+  React.useEffect(() => {
+    const ta = ref.current; if (!ta) return;
+    ta.style.height = 'auto';
+    ta.style.height = Math.min(ta.scrollHeight, 600) + 'px';
+  }, [val]);
+  return (
+    <textarea ref={ref} className="autogrow" value={val} onChange={(e) => setVal(e.target.value)}
+      placeholder="Опишите контекст домена — ключевые сущности, термины, особенности данных…" />
   );
 }
 
@@ -391,7 +414,7 @@ function AdminUsers({ enterAs }) {
               </div>
               {isOpen && (
                 <div className="utable-expand">
-                  <UserDomainSettings user={u} />
+                  <AdminUserExpand user={u} />
                 </div>
               )}
             </React.Fragment>
@@ -431,6 +454,33 @@ function UserRolePill({ role }) {
 }
 
 /* Expanded user → shows settings per each connected domain (unified template) */
+/* Admin → Пользователи → раскрытая строка: вкладка «Настройки агента» (редактирование от имени админа)
+   и блок «Домены» (что подключено пользователю). */
+function AdminUserExpand({ user }) {
+  const [tab, setTab] = React.useState('agent');
+  return (
+    <div>
+      <div style={{ display: 'inline-flex', padding: 3, background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: 6, marginBottom: 14 }}>
+        {[
+          { id: 'agent',   label: 'Настройки агента' },
+          { id: 'domains', label: 'Домены' },
+        ].map((t) => (
+          <button key={t.id} onClick={() => setTab(t.id)} style={{
+            padding: '5px 12px', borderRadius: 4,
+            background: tab === t.id ? 'var(--teal-dim)' : 'transparent',
+            border: '0.5px solid ' + (tab === t.id ? 'var(--teal-400)' : 'transparent'),
+            color: tab === t.id ? 'var(--teal-400)' : 'var(--fg-muted)',
+            fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.04em',
+            cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
+          }}>{t.label}</button>
+        ))}
+      </div>
+      {tab === 'agent' && <SettingsAgent user={user} admin />}
+      {tab === 'domains' && <UserDomainSettings user={user} />}
+    </div>
+  );
+}
+
 function UserDomainSettings({ user }) {
   const userDomains = OESDATA.domains.filter(d => user.domains.includes(d.id));
   const [active, setActive] = React.useState(userDomains[0]?.id);

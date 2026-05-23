@@ -2,10 +2,11 @@ import React from 'react';
 import {
   CubeLogo, IconSend, IconShield, IconRefresh, IconCheck, IconGitBranch, IconEdit,
   IconEye, IconTrendingUp, IconTriangle, IconPickaxe, IconBrain, IconAlertCircle, IconZap,
+  IconClock, IconPlus,
 } from '../icons.jsx';
 import { KindChip, PreviewChartLine, PreviewChartBars, Legend } from '../parts.jsx';
 import { OESDATA } from '../data.jsx';
-import { DashVolumePerShift, DashCycleRating, DashBudget, DashLossesMonitor } from './solution-view.jsx';
+import { DashVolumePerShift, DashCycleRating, DashBudget, DashLossesMonitor, GenericSolutionPreview } from './solution-view.jsx';
 import { makeShortId } from '../utils.jsx';
 
 /* Создать решение — single-window flow.
@@ -20,7 +21,7 @@ const KIND_LABEL = {
   command: 'Команда',
 };
 
-function SectionCreate({ setRoute, tweak, kind, setKind, prefill, clearPrefill }) {
+function SectionCreate({ setRoute, tweak, kind, setKind, prefill, clearPrefill, startNewChat, openChatHistory }) {
   const isEdit = !!prefill;
   const editVersion = prefill?.fromVersion;
   const nextVersion = isEdit ? editVersion + 1 : 1;
@@ -99,74 +100,72 @@ function SectionCreate({ setRoute, tweak, kind, setKind, prefill, clearPrefill }
     setRoute('solutions');
   };
 
+  const onNewChat = () => { clearPrefill && clearPrefill(); startNewChat && startNewChat(); };
+  const onOpenHistory = () => openChatHistory && openChatHistory();
+
   return (
-    <div className="fade-up" style={{
-      display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 380px', gap: 0,
-      height: 'calc(100vh - var(--nav-h) - 4px)', marginInline: -32, marginTop: -24,
-    }}>
-      {/* — Center: preview — */}
-      <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, borderRight: '0.5px solid var(--border)' }}>
-        <CreateHeader
-          name={name} setName={setName} kind={kind}
-          previewState={previewState}
-          onPublish={onPublish}
-          onReset={reset}
-          isEdit={isEdit}
-          editVersion={editVersion}
-          nextVersion={nextVersion}
-        />
-        <div className="scroll-y" style={{ flex: 1, padding: '28px 36px', background: 'var(--bg)' }}>
+    <div className="create-shell fade-up">
+      <CreateHeader
+        name={name} setName={setName} kind={kind} solId={solId}
+        previewState={previewState}
+        onPublish={onPublish} onReset={reset}
+        isEdit={isEdit} editVersion={editVersion} nextVersion={nextVersion}
+        onNewChat={onNewChat} onOpenHistory={onOpenHistory} />
+
+      <div className="create-shell-body">
+        <div className="create-center">
           <PreviewPane state={previewState} kind={kind} name={name} prefill={prefill} />
         </div>
-      </div>
-
-      {/* — Right: chat — */}
-      <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, background: 'var(--surface)' }}>
-        <div style={{ padding: '14px 18px', borderBottom: '0.5px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <CubeLogo size={16} color="var(--teal-400)" />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: 'var(--font-sans)', fontSize: 13, fontWeight: 500, color: 'var(--fg)' }}>
-              {isEdit ? `Доработка · v${editVersion} → v${nextVersion}` : 'Диалог с OpenClaw'}
-            </div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--fg-muted)', letterSpacing: '0.10em', textTransform: 'uppercase', marginTop: 2 }}>
-              {KIND_LABEL[kind]} · id {solId}
-            </div>
+        <div className="create-chat">
+          <div ref={scrollRef} className="scroll-y" style={{ flex: 1, padding: '18px 18px 8px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {script.slice(0, revealed).map((m, i) => <ChatBubble key={i} m={m} />)}
+            {revealed < script.length && <TypingBubble />}
           </div>
-        </div>
-
-        <div ref={scrollRef} className="scroll-y" style={{ flex: 1, padding: '18px 18px 8px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {script.slice(0, revealed).map((m, i) => <ChatBubble key={i} m={m} />)}
-          {revealed < script.length && <TypingBubble />}
-        </div>
-
-        <div style={{ padding: 14, borderTop: '0.5px solid var(--border)' }}>
-          <div style={{
-            display: 'flex', alignItems: 'flex-end', gap: 8,
-            padding: 10, borderRadius: 8,
-            background: 'var(--surface-2)', border: '0.5px solid var(--border)',
-          }}>
-            <textarea
-              value={draft}
-              onChange={e => setDraft(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendDraft(); } }}
-              placeholder={previewState === 'generating' ? 'Workspace собирает превью…' : (isEdit ? 'Опишите, что изменить — Workspace внесёт правки' : 'Ответьте текстом — например, «период 30 смен, порог 90%»')}
-              style={{ flex: 1, background: 'transparent', border: 0, outline: 0, resize: 'none', fontFamily: 'var(--font-sans)', fontSize: 13, color: 'var(--fg)', minHeight: 38, maxHeight: 120, lineHeight: 1.5 }}
-            />
-            <button className="btn btn-primary btn-sm" disabled={!draft.trim()} onClick={sendDraft}>
-              <IconSend size={11} /> Отправить
-            </button>
-          </div>
-          <div style={{ marginTop: 8, fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.08em', color: 'var(--fg-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <IconShield size={9} /> Маскирование чувствительных данных · вкл
-          </div>
+          <CreateChatComposer
+            draft={draft} setDraft={setDraft} onSend={sendDraft}
+            disabled={previewState === 'generating'}
+            placeholder={previewState === 'generating' ? 'OpenClaw собирает превью…' : (isEdit ? 'Опишите, что изменить — OpenClaw внесёт правки' : 'Ответьте текстом — например, «период 30 смен, порог 90%»')} />
         </div>
       </div>
     </div>
   );
 }
 
+/* Composer used inside the edit/create chat panel — same auto-grow textarea as the Chat section. */
+function CreateChatComposer({ draft, setDraft, onSend, disabled, placeholder }) {
+  const ref = React.useRef(null);
+  React.useEffect(() => {
+    const ta = ref.current; if (!ta) return;
+    ta.style.height = 'auto';
+    ta.style.height = Math.min(ta.scrollHeight, 310) + 'px';
+  }, [draft]);
+  return (
+    <div style={{ padding: 14, borderTop: '0.5px solid var(--border)' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, padding: 10, borderRadius: 8, background: 'var(--surface-2)', border: '0.5px solid var(--border)' }}>
+        <textarea
+          ref={ref}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
+          disabled={disabled}
+          placeholder={placeholder}
+          rows={1}
+          style={{ flex: 1, background: 'transparent', border: 0, outline: 0, resize: 'none', fontFamily: 'var(--font-sans)', fontSize: 13, color: 'var(--fg)', minHeight: 22, maxHeight: 310, lineHeight: 1.5, overflowY: 'auto' }} />
+        <button className="icon-btn"
+          style={{ width: 30, height: 30, background: 'var(--teal-400)', color: 'var(--fg-on-teal)', borderColor: 'var(--teal-400)', opacity: disabled || !draft.trim() ? 0.5 : 1 }}
+          disabled={disabled || !draft.trim()} onClick={onSend} title="Отправить">
+          <IconSend size={13} />
+        </button>
+      </div>
+      <div style={{ marginTop: 8, fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.08em', color: 'var(--fg-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <IconShield size={9} /> Маскирование чувствительных данных · вкл
+      </div>
+    </div>
+  );
+}
+
 /* — Header with editable title — */
-function CreateHeader({ name, setName, kind, previewState, onPublish, onReset, isEdit, editVersion, nextVersion }) {
+function CreateHeader({ name, setName, kind, solId, previewState, onPublish, onReset, isEdit, editVersion, nextVersion, onNewChat, onOpenHistory }) {
   const verLabel = isEdit ? `v${editVersion} → v${nextVersion}` : 'v1';
   const publishLabel = isEdit ? `Опубликовать v${nextVersion}` : 'Опубликовать';
   const statusLabel = isEdit
@@ -174,16 +173,20 @@ function CreateHeader({ name, setName, kind, previewState, onPublish, onReset, i
     : (previewState === 'ready' ? 'ПРЕВЬЮ ГОТОВО' : previewState === 'generating' ? 'СБОРКА…' : 'УТОЧНЕНИЕ');
   const statusColor = previewState === 'ready' ? 'var(--teal-400)' : (previewState === 'generating' ? 'var(--warn-orange)' : 'var(--fg-muted)');
   return (
-    <div style={{
-      padding: '14px 36px 12px', background: 'var(--surface)',
-      borderBottom: '0.5px solid var(--border)',
-      display: 'flex', flexDirection: 'column', gap: 8,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-        <EditableTitle value={name} onChange={setName} />
-        <span style={{ flex: 1 }} />
+    <div className="create-shell-head">
+      <div className="create-shell-head-row">
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <EditableTitle value={name} onChange={setName} />
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg-muted)', letterSpacing: '0.04em', flexShrink: 0 }}>id {solId}</span>
+        </div>
+        <button className="btn btn-neutral btn-sm" onClick={onOpenHistory} title="История чатов">
+          <IconClock size={11} /> История
+        </button>
+        <button className="btn btn-neutral btn-sm" onClick={onNewChat} title="Новый чат">
+          <IconPlus size={11} /> Новый чат
+        </button>
         <button className="btn btn-neutral btn-sm" onClick={onReset} title="Сбросить и начать заново"><IconRefresh size={11} /></button>
-        <button className="btn btn-primary" disabled={previewState !== 'ready'} onClick={onPublish}><IconCheck size={11} /> {publishLabel}</button>
+        <button className="btn btn-primary btn-sm" disabled={previewState !== 'ready'} onClick={onPublish}><IconCheck size={11} /> {publishLabel}</button>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <KindChip kind={kind} />
@@ -221,11 +224,11 @@ function EditableTitle({ value, onChange }) {
           onChange={e => onChange(e.target.value)}
           onBlur={commit}
           onKeyDown={e => { if (e.key === 'Enter' || e.key === 'Escape') commit(); }}
-          style={{ fontFamily: 'var(--font-sans)', fontSize: 22, fontWeight: 500, letterSpacing: '-0.02em', color: 'var(--fg)' }}
+          style={{ fontFamily: 'var(--font-sans)', fontSize: 18, fontWeight: 500, letterSpacing: '-0.02em', color: 'var(--fg)' }}
         />
       ) : (
         <>
-          <span style={{ fontFamily: 'var(--font-sans)', fontSize: 22, fontWeight: 500, letterSpacing: '-0.02em', color: 'var(--fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</span>
+          <span style={{ fontFamily: 'var(--font-sans)', fontSize: 18, fontWeight: 500, letterSpacing: '-0.02em', color: 'var(--fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</span>
           <IconEdit size={12} className="edit-hint" />
         </>
       )}
@@ -265,12 +268,15 @@ function PreviewPane({ state, kind, name, prefill }) {
     return <GeneratingPlaceholder />;
   }
   // ready — in edit mode render the actual dashboard for the source solution
+  // (same as solution-view: known IDs → Dash component, otherwise a generic placeholder).
   if (prefill && prefill.solutionId) {
     const id = prefill.solutionId;
     if (id === 'sol-01') return <DashVolumePerShift />;
     if (id === 'sol-04') return <DashCycleRating />;
     if (id === 'sol-06') return <DashBudget />;
     if (id === 'sol-08') return <DashLossesMonitor />;
+    const sol = OESDATA.solutions.find((s) => s.id === id);
+    if (sol) return <GenericSolutionPreview sol={sol} />;
   }
   if (kind === 'dash') return <DashPreview name={name} />;
   if (kind === 'alert') return <AlertPreview name={name} />;

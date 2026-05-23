@@ -1201,4 +1201,4 @@ function LossMetric({ m }) {
 
 }
 
-export { SectionSolutionView, DashBudget, DashVolumePerShift, DashCycleRating, DashLossesMonitor };
+export { SectionSolutionView, DashBudget, DashVolumePerShift, DashCycleRating, DashLossesMonitor, GenericSolutionPreview };
