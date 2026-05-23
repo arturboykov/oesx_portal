@@ -230,7 +230,7 @@ function SectionChat({ setRoute, openCreate, openCreatePage, openSolution, tweak
       draft={draft}
       setDraft={setDraft}
       onSend={sendDraft}
-      onCreate={(k) => newChat({ kind: k })}
+      onCreate={(k) => openCreate && openCreate(k)}
       flow={flow}
       hero={isEmpty}
       showCreate={isEmpty}

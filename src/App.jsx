@@ -51,10 +51,10 @@ export default function App() {
   const openCreate = (kind) => {
     if (kind) setCreateKind(kind);
     setCreatePrefill(null);
-    // "Создать решение" entry points (sidebar, Solutions header) route
-    // to Chat and start a new dialog with a pre-selected solution kind.
-    setChatTrigger({ mode: 'create', kind: kind || 'dash', ts: Date.now() });
-    setRoute('chat');
+    // Открываем полноценную страницу создания: превью-плейсхолдер по центру,
+    // сценарный чат справа (на <1200px — снизу). Та же страница, что и для
+    // редактирования существующего решения, только без prefill.
+    setRoute('create');
   };
 
   /* Open the Create page directly (used by the chat-flow "Open in editor" link and

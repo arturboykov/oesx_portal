@@ -2,7 +2,7 @@ import React from 'react';
 import {
   CubeLogo, IconSend, IconShield, IconRefresh, IconCheck, IconGitBranch, IconEdit,
   IconEye, IconTrendingUp, IconTriangle, IconPickaxe, IconBrain, IconAlertCircle, IconZap,
-  IconClock, IconPlus,
+  IconClock, IconPlus, IconBarChart,
 } from '../icons.jsx';
 import { KindChip, PreviewChartLine, PreviewChartBars, Legend } from '../parts.jsx';
 import { OESDATA } from '../data.jsx';
@@ -241,25 +241,42 @@ function EditableTitle({ value, onChange }) {
    the existing solution rather than the generic kind-based preview. */
 function PreviewPane({ state, kind, name, prefill }) {
   if (state === 'idle') {
+    const Icon = kind === 'dash' ? IconBarChart : kind === 'alert' ? IconAlertCircle : IconZap;
+    const sub = kind === 'dash'
+      ? 'Графики и таблицы соберутся в этой области по мере уточнения задачи в чате справа.'
+      : kind === 'alert'
+        ? 'Шаблон уведомления и параметры срабатывания появятся здесь.'
+        : 'Описание команды, расписание и каналы появятся здесь.';
     return (
       <div style={{
-        height: '100%', minHeight: 480,
+        minHeight: 480,
         border: '0.5px dashed var(--border-strong)', borderRadius: 'var(--r-lg)',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        gap: 14, color: 'var(--fg-muted)', textAlign: 'center', padding: 32,
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        gap: 14, color: 'var(--fg-muted)', textAlign: 'center', padding: '48px 32px 32px',
       }}>
         <div style={{
           width: 64, height: 64, borderRadius: 'var(--r-xl)',
           background: 'var(--surface)', border: '0.5px solid var(--border)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--teal-400)',
         }}>
-          <IconEye size={26} />
+          <Icon size={26} />
         </div>
         <div style={{ fontFamily: 'var(--font-sans)', fontSize: 15, fontWeight: 500, color: 'var(--fg)' }}>
           Превью появится здесь
         </div>
-        <div style={{ fontFamily: 'var(--font-sans)', fontSize: 12, maxWidth: 380, lineHeight: 1.6 }}>
-          Уточните задачу в чате справа. Как только Workspace соберёт первый вариант — он откроется в этой области.
+        <div style={{ fontFamily: 'var(--font-sans)', fontSize: 12, maxWidth: 460, lineHeight: 1.6 }}>
+          {sub}
+        </div>
+        {/* Skeleton-наброски того, как разлинуется область, когда чат соберёт превью */}
+        <div style={{ width: '100%', maxWidth: 720, marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+            <div className="skeleton" style={{ height: 56 }} />
+            <div className="skeleton" style={{ height: 56 }} />
+            <div className="skeleton" style={{ height: 56 }} />
+            <div className="skeleton" style={{ height: 56 }} />
+          </div>
+          <div className="skeleton" style={{ height: 140 }} />
+          <div className="skeleton" style={{ height: 80 }} />
         </div>
       </div>
     );

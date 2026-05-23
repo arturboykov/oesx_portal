@@ -177,6 +177,7 @@ function SectionSolutions({ setRoute, openCreate, openSolution, openEdit, editIn
           textTransform: 'uppercase', color: 'var(--fg-muted)',
           borderBottom: '0.5px solid var(--border-strong)'
         }}>
+          <span></span>{/* Актив. — узкая колонка с точкой, без заголовка */}
           <span>Решение</span>
           <span>Тип</span>
           <span>Автор</span>
@@ -185,7 +186,6 @@ function SectionSolutions({ setRoute, openCreate, openSolution, openEdit, editIn
           <span style={{ textAlign: 'right', paddingRight: 16 }}>Обновлено</span>
           <span>Источники</span>
           <span>Статус</span>
-          <span>Актив.</span>
           <span></span>
         </div>
         {list.map((s, i) => {
@@ -229,8 +229,8 @@ function SectionSolutions({ setRoute, openCreate, openSolution, openEdit, editIn
 }
 
 /* Shared column template — keeps header and rows in sync.
-   Решение · Тип · Автор · Версия · Запусков · Обновлено · Источники · Статус · Актив. · меню */
-const SOL_COLS = '1.5fr 116px 128px 58px 74px 112px 110px 116px 56px 30px';
+   Актив. · Решение · Тип · Автор · Версия · Запусков · Обновлено · Источники · Статус · меню */
+const SOL_COLS = '28px 1.5fr 116px 128px 58px 74px 112px 110px 116px 30px';
 
 function SolutionRow({ sol, alt, isOwner, canEdit, onView, onEdit, onToggle, onFork, onHistory, onDelete }) {
   const [hover, setHover] = React.useState(false);
@@ -256,6 +256,14 @@ function SolutionRow({ sol, alt, isOwner, canEdit, onView, onEdit, onToggle, onF
         borderBottom: '0.5px solid var(--border)',
         cursor: 'pointer', transition: 'background .15s'
       }}>
+      {/* Актив.: точка слева — зелёная (активно) / слабо-серая (выключено) */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }} title={sol.enabled ? 'Активно' : 'Выключено'}>
+        <span style={{
+          width: 8, height: 8, borderRadius: 999, display: 'inline-block',
+          background: sol.enabled ? 'var(--pos)' : 'var(--fg-dim)',
+          boxShadow: sol.enabled ? '0 0 6px rgba(29,184,154,0.55)' : 'none'
+        }} />
+      </div>
       <div style={{ minWidth: 0 }}>
         <div style={{ fontFamily: 'var(--font-sans)', fontSize: 13, fontWeight: 500, color: 'var(--fg)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
           {sol.name}
@@ -312,14 +320,6 @@ function SolutionRow({ sol, alt, isOwner, canEdit, onView, onEdit, onToggle, onF
           {sol.published ? <IconCheck size={11} /> : <IconEdit size={11} />}
           {sol.published ? 'опубликовано' : 'черновик'}
         </span>
-      </div>
-      {/* Актив.: только точка — зелёная (активно) / слабо-серая (выключено) */}
-      <div title={sol.enabled ? 'Активно' : 'Выключено'}>
-        <span style={{
-          width: 8, height: 8, borderRadius: 999, display: 'inline-block',
-          background: sol.enabled ? 'var(--pos)' : 'var(--fg-dim)',
-          boxShadow: sol.enabled ? '0 0 6px rgba(29,184,154,0.55)' : 'none'
-        }} />
       </div>
       <div ref={menuRef} style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()}>
         <button className="icon-btn" style={{ width: 26, height: 26, opacity: hover || menuOpen ? 1 : 0.5 }} aria-label="Действия" onClick={() => setMenuOpen(!menuOpen)}>
