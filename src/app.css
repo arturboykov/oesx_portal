@@ -381,6 +381,39 @@ canvas, svg.no-transition * { transition: none !important; }
   width: 6px; height: 6px; border-radius: 999px;
   background: var(--warn-orange); box-shadow: 0 0 0 1.5px var(--bg);
 }
+/* Bell badge — числовой счётчик непрочитанных уведомлений в шапке.
+   Чуть крупнее точки, читаемая цифра, обводка цветом подложки шапки, чтобы
+   визуально отделяться от иконки колокольчика. */
+.icon-btn .bell-badge {
+  position: absolute; top: -2px; right: -2px;
+  min-width: 17px; height: 17px; padding: 0 4px;
+  border-radius: 999px;
+  background: var(--warn-orange); color: #fff;
+  font-family: var(--font-mono); font-size: 9px; font-weight: 600;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 2px solid var(--nav-bg);
+  pointer-events: none;
+  line-height: 1;
+}
+/* Notification row in popover / Account → Notifications */
+.notif-row {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 11px 14px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.notif-row:hover { background: var(--surface-2); }
+.notif-envelope {
+  width: 28px; height: 28px; border-radius: var(--r-md);
+  border: 0.5px solid transparent;
+  background: transparent; color: var(--fg-muted);
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+  opacity: 0;
+  transition: opacity .15s, background .15s, border-color .15s, color .15s;
+}
+.notif-row:hover .notif-envelope { opacity: 1; }
+.notif-envelope:hover { background: var(--surface-3); border-color: var(--border-strong); color: var(--fg); }
 
 /* User chip in nav */
 .user-chip {
@@ -424,7 +457,17 @@ canvas, svg.no-transition * { transition: none !important; }
   border: 0.5px solid transparent;
 }
 .btn-primary { background: var(--teal-400); color: var(--fg-on-teal); border-color: var(--teal-400); }
-.btn-primary:hover { background: var(--teal-300); border-color: var(--teal-300); }
+.btn-primary:hover:not(:disabled) { background: var(--teal-300); border-color: var(--teal-300); }
+/* Disabled — явно «серая, нажать нельзя»: без обводки, текст и иконка приглушённые */
+.btn-primary:disabled,
+.btn-primary[disabled] {
+  background: var(--surface-3) !important;
+  color: var(--fg-dim) !important;
+  border-color: transparent !important;
+  cursor: not-allowed;
+  opacity: 1;
+  box-shadow: none;
+}
 .btn-ghost { background: var(--teal-dim); color: var(--teal-400); border-color: var(--border-strong); }
 .btn-ghost:hover { background: var(--teal-glow); }
 .btn-neutral { background: rgba(255,255,255,0.05); color: var(--fg-muted); border-color: var(--border); }

@@ -5,6 +5,7 @@ import { OESDATA } from '../data.jsx';
 import { useLimitState } from '../shell.jsx';
 import { downloadCSV } from '../utils.jsx';
 
+import { Modal } from '../portal.jsx';
 /* Потребление — токены, лимит, прогноз-чарт, разбивка по типам и решениям. */
 
 function SectionUsage({ setRoute, tweak }) {
@@ -46,11 +47,11 @@ function SectionUsage({ setRoute, tweak }) {
   };
 
   return (
-    <div className="main-narrow fade-up">
+    <div className="fade-up">
       <div className="page-head">
         <div>
           <div className="page-title">Потребление и лимиты</div>
-          <div className="page-sub">Период: {b.period} · до конца — {b.daysInPeriod - todayDay} дней · роль «{OESDATA.me.role}»</div>
+          <div className="page-sub">Период: {b.period} · до конца — {b.daysInPeriod - todayDay} дней · должность «{OESDATA.me.role}»</div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn btn-neutral" onClick={exportReport}><IconDownload size={11} /> Отчёт CSV</button>
@@ -207,19 +208,25 @@ function LimitLevelRow({ level, sub, used, limit, highlight }) {
 /* — Запрос на повышение лимита у ИТ-службы — */
 function RequestLimitModal({ limitTokens, used, pct, onClose }) {
   const presets = [6_000_000, 7_500_000, 9_000_000];
-  const [target, setTarget] = React.useState(presets[0]);
+  const [target, setTarget] = React.useState(presets[0]); // число (пресет) или 'custom'
+  const [customVal, setCustomVal] = React.useState('');
   const [reason, setReason] = React.useState('');
   const fmt = (t) => (t / 1_000_000).toFixed(1) + 'M';
+
+  const customNum = parseInt(String(customVal).replace(/\D/g, ''), 10);
+  const effectiveTarget = target === 'custom' ? (Number.isFinite(customNum) && customNum > 0 ? customNum : null) : target;
+  const canSubmit = !!reason.trim() && effectiveTarget != null;
+
   const submit = () => {
     onClose();
     if (window.notify) window.notify({
       title: 'Заявка отправлена в ИТ-службу',
-      body: `Повышение лимита до ${fmt(target)} токенов · ответ в течение 1 рабочего дня`,
+      body: `Повышение лимита до ${fmt(effectiveTarget)} токенов · ответ в течение 1 рабочего дня`,
       kind: 'success',
     });
   };
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <Modal onClose={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <div className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -244,7 +251,29 @@ function RequestLimitModal({ limitTokens, used, pct, onClose }) {
                   fontFamily: 'var(--font-mono)', fontSize: 14, cursor: 'pointer',
                 }}>{fmt(p)}</button>
               ))}
+              <button onClick={() => setTarget('custom')} style={{
+                flex: 1, padding: '10px 0', borderRadius: 6,
+                background: target === 'custom' ? 'var(--teal-dim)' : 'var(--surface-2)',
+                border: '0.5px solid ' + (target === 'custom' ? 'var(--teal-400)' : 'var(--border)'),
+                color: target === 'custom' ? 'var(--teal-400)' : 'var(--fg)',
+                fontFamily: 'var(--font-mono)', fontSize: 14, cursor: 'pointer',
+              }}>Свой</button>
             </div>
+            {target === 'custom' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                <input
+                  className="input mono"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Например: 8500000"
+                  value={customVal}
+                  onChange={(e) => setCustomVal(e.target.value)}
+                  style={{ flex: 1 }} />
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg-muted)' }}>
+                  {Number.isFinite(customNum) && customNum > 0 ? '= ' + fmt(customNum) + ' токенов' : 'токенов'}
+                </span>
+              </div>
+            )}
           </div>
           <div className="field-stack">
             <div className="field-label">Обоснование *</div>
@@ -257,10 +286,10 @@ function RequestLimitModal({ limitTokens, used, pct, onClose }) {
         </div>
         <div className="modal-foot">
           <button className="btn btn-neutral" onClick={onClose}>Отмена</button>
-          <button className="btn btn-primary" disabled={!reason.trim()} onClick={submit}><IconCheck size={11} /> Отправить заявку</button>
+          <button className="btn btn-primary" disabled={!canSubmit} onClick={submit}><IconCheck size={11} /> Отправить заявку</button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 

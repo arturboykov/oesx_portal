@@ -61,6 +61,7 @@ const IconCpu          = (p) => <I {...p} d={<><rect x="4" y="4" width="16" heig
 const IconShield       = (p) => <I {...p} d={<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>} />;
 const IconLink         = (p) => <I {...p} d={<><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></>} />;
 const IconMail         = (p) => <I {...p} d={<><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></>} />;
+const IconMailOpen     = (p) => <I {...p} d={<><path d="M21.2 8.4c.5.38.8.97.8 1.6v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V10a2 2 0 0 1 .8-1.6l8-6a2 2 0 0 1 2.4 0z"/><path d="m22 10-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 10"/></>} />;
 const IconUsers        = (p) => <I {...p} d={<><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>} />;
 const IconGitBranch    = (p) => <I {...p} d={<><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></>} />;
 const IconEye          = (p) => <I {...p} d={<><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>} />;
@@ -116,7 +117,7 @@ export {
   IconHeadphones, IconSettings, IconHome, IconBox, IconPlus, IconStore,
   IconCoins, IconBrain, IconLifeBuoy, IconStar, IconCheck, IconX, IconEdit, IconTrash,
   IconFork, IconShare, IconSend, IconPaperclip, IconDatabase, IconBookOpen,
-  IconCalendar, IconFilter, IconSparkles, IconCpu, IconShield, IconLink, IconMail,
+  IconCalendar, IconFilter, IconSparkles, IconCpu, IconShield, IconLink, IconMail, IconMailOpen,
   IconUsers, IconGitBranch, IconEye, IconMoreH, IconSliders, IconSun, IconMoon,
   IconWrench, IconPlay, IconPause, IconCopy,
   IconPanelLeft, IconPanelLeftClose, IconExpand, IconLogOut, IconUserCheck,

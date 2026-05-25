@@ -8,6 +8,7 @@ import {
 import { OESDATA } from '../data.jsx';
 import { SettingsAgent } from './various.jsx';
 
+import { Modal } from '../portal.jsx';
 /* Администрирование — два таба: Домены и Пользователи. */
 
 function SectionAdmin({ tab, setTab, enterAs }) {
@@ -71,7 +72,7 @@ function AddDomainModal({ onClose, onCreate }) {
   const [port, setPort] = React.useState('18789');
   const [llm, setLlm] = React.useState('CLAUDE-OPUS-4-6');
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <Modal onClose={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
         <div className="modal-head">
           <div className="modal-title">Создание домена</div>
@@ -105,7 +106,7 @@ function AddDomainModal({ onClose, onCreate }) {
           <button className="btn btn-primary" disabled={!name.trim()} onClick={onCreate}><IconPlus size={11} /> Создать</button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -137,24 +138,32 @@ function DomainCard({ d, open, onToggle, onAddResource }) {
 
 /* Unified domain settings layout — used both inside DomainCard and inside expandable user rows */
 function DomainBody({ d, compact, onAddResource }) {
+  /* Раздел «Администрирование → Домены» (non-compact) показывает у каждого домена
+     только блок «Подключённые API · MCP» с фиксированным набором интеграций.
+     Развёрнутая вкладка домена в карточке пользователя (compact) сохраняет полную раскладку. */
+  if (!compact) {
+    const fixedApis = [
+      { id: 'anthropic', label: 'Anthropic API' },
+      { id: 'openai',    label: 'OpenAI API' },
+      { id: 'telegram',  label: 'Telegram Bot' },
+      { id: 'shift',     label: 'Shift Rating Agent API' },
+    ];
+    return (
+      <div className="dom-body">
+        <div className="dom-section" style={{ gridColumn: '1 / -1' }}>
+          <div className="dom-section-h"><IconWrench size={11} /> Подключённые API · MCP</div>
+          {fixedApis.map((a) => (
+            <div key={a.id} className="dom-row-state">
+              <span className="state-label">{a.label}</span>
+              <span className="state-pill configured"><span className="dot dot-pos" style={{ marginRight: 5 }} /> configured</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
   return (
-    <div className="dom-body" style={compact ? { padding: '14px 4px 4px', gap: '20px 28px' } : null}>
-      {onAddResource && !compact &&
-        <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', paddingBottom: 12, borderBottom: '0.5px solid var(--border)' }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--fg-muted)' }}>Настроить домен</span>
-          <span style={{ flex: 1 }} />
-          <button className="btn btn-ghost btn-sm" onClick={() => onAddResource('mcp')}><IconPlus size={10} /> MCP</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => onAddResource('api')}><IconPlus size={10} /> API</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => onAddResource('files')}><IconPlus size={10} /> Файлы</button>
-        </div>
-      }
-      {/* context — динамический textarea, до 600px высоты */}
-      {!compact &&
-        <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div className="dom-section-h"><IconBookOpen size={11} /> Контекст домена</div>
-          <DomainContextField domain={d} />
-        </div>
-      }
+    <div className="dom-body" style={{ padding: '14px 4px 4px', gap: '20px 28px' }}>
       {/* db */}
       <div className="dom-section">
         <div className="dom-section-h"><IconDatabase size={11} /> Зарегистрировано в БД</div>
@@ -296,7 +305,7 @@ function AddResourceModal({ domain, type, onClose }) {
     if (window.notify) window.notify({ title: info.toast, body: `${domain.name} · ${name.trim()}`, kind: 'success' });
   };
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <Modal onClose={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <div className="modal-title">{info.title} · {domain.name}</div>
@@ -319,7 +328,7 @@ function AddResourceModal({ domain, type, onClose }) {
           <button className="btn btn-primary" disabled={!valid} onClick={submit}><IconPlus size={11} /> Добавить</button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -522,7 +531,7 @@ function UserModal({ mode, user, onClose, onSave }) {
   const isValid = f.name.trim().length > 0;
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <Modal onClose={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <div className="modal-title">{mode === 'create' ? 'Новый пользователь' : 'Редактирование пользователя'}</div>
@@ -578,7 +587,7 @@ function UserModal({ mode, user, onClose, onSave }) {
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -656,7 +665,7 @@ function ToggleSwitch({ value, onChange }) {
 
 function DeleteUserModal({ user, onClose, onConfirm }) {
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <Modal onClose={onClose}>
       <div className="modal" style={{ width: 460 }} onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <div className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -679,7 +688,7 @@ function DeleteUserModal({ user, onClose, onConfirm }) {
           <button className="btn btn-danger" onClick={onConfirm}><IconTrash size={11} /> Удалить</button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 

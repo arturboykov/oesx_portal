@@ -437,7 +437,7 @@ const OESDATA = (() => {
       volume: 'openclaw-dc5d643a-953c-43f9-9761-1dde51beebb3',
     },
     agents: [
-      { name: 'Personal Workspace', role: 'основной',  model: 'claude-haiku-4-5',  primary: true },
+      { name: 'OpenClaw',           role: 'основной',  model: 'claude-haiku-4-5',  primary: true },
       { name: 'Разработчик',        role: 'developer', model: 'claude-sonnet-4-5', primary: false },
     ],
     mcp: [

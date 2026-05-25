@@ -26,8 +26,42 @@ export default function App() {
   const [createKind, setCreateKind] = React.useState('dash');
   const [createPrefill, setCreatePrefill] = React.useState(null); // { solutionId, fromVersion, name, kind }
   const [adminTab, setAdminTab] = React.useState('domains');
+  const [settingsTab, setSettingsTab] = React.useState('profile');
   const [openSol, setOpenSol] = React.useState(null);
   const [time, setTime] = React.useState(currentTimestamp());
+
+  /* Уведомления — глобальное состояние, чтобы значок-колокольчик в шапке и
+     раздел «Аккаунт → Уведомления» показывали одни и те же данные и согласованно
+     обновлялись при пометке прочитанным. */
+  const [notifications, setNotifications] = React.useState([
+    { id: 'n1', kind: 'warn',    title: '80% лимита токенов',       text: 'Прогноз — лимит закончится через ≈9 дней.',                       t: '12 мин назад', route: 'usage',     read: false },
+    { id: 'n2', kind: 'alert',   title: 'Просадка КИО — R 9250 /5', text: 'КИО упал до 81% в ночную смену.',                                 t: '32 мин назад', route: 'chat',      read: false },
+    { id: 'n3', kind: 'fork',    title: 'Форк вашего решения',      text: '«Просадки КИО» — Гречко И. С., логистика.',                       t: '2 ч назад',    route: 'solutions', read: false },
+    { id: 'n4', kind: 'success', title: 'Решение опубликовано',     text: '«Бюджет — добыча и вскрыша» · v3',                                t: 'вчера',        route: 'solutions', read: true },
+    { id: 'n5', kind: 'info',    title: 'MCP-сервер подключён',     text: 'shift-rating-mcp-port.oeswork.io',                                t: '17.05',        route: 'settings',  read: true },
+    { id: 'n6', kind: 'info',    title: 'Доступ предоставлен',      text: 'Котов А. С. поделился «Q&A агент по справочнику ТО»',             t: '15.05',        route: 'solutions', read: true },
+  ]);
+  const markNotificationRead = React.useCallback((id) => {
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+  }, []);
+  const markNotificationUnread = React.useCallback((id) => {
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: false } : n)));
+  }, []);
+  const markAllNotificationsRead = React.useCallback(() => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  }, []);
+  const openAllNotifications = React.useCallback(() => {
+    setSettingsTab('notify');
+    setRoute('settings');
+  }, []);
+
+  /* Агенты пользователя — поднято в App, чтобы переключение «Сделать основным»
+     синхронно меняло имя отвечающего бота в Чате и заголовки в Create. */
+  const [agents, setAgents] = React.useState(() => OESDATA.assistant.agents.map((a) => ({ ...a })));
+  const setPrimaryAgent = React.useCallback((name) => {
+    setAgents((prev) => prev.map((a) => ({ ...a, primary: a.name === name })));
+  }, []);
+  const primaryAgentName = (agents.find((a) => a.primary) || agents[0] || { name: 'OpenClaw' }).name;
   /* Chat trigger — bumps when a "Создать решение" or "Новый чат" entry point is invoked
      from outside the Chat section. The Chat section reads this and resets/initiates. */
   const [chatTrigger, setChatTrigger] = React.useState(null); // { mode: 'new'|'create'|'history', kind?, ts }
@@ -130,19 +164,19 @@ export default function App() {
   const effectiveRole = impersonating ? 'user' : t.userRole;
 
   const sectionMap = {
-    chat:        <SectionChat        setRoute={setRoute} openCreate={openCreate} openCreatePage={openCreatePage} openSolution={openSolution} tweak={t} trigger={chatTrigger} clearTrigger={() => setChatTrigger(null)} impersonating={impersonating} />,
+    chat:        <SectionChat        setRoute={setRoute} openCreate={openCreate} openCreatePage={openCreatePage} openSolution={openSolution} tweak={t} trigger={chatTrigger} clearTrigger={() => setChatTrigger(null)} impersonating={impersonating} primaryAgentName={primaryAgentName} />,
     solutions:   <SectionSolutions   setRoute={setRoute} openCreate={openCreate} openSolution={openSolution} openEdit={openEdit} editInChat={editInChat} tweak={t} />,
-    create:      <SectionCreate      setRoute={setRoute} tweak={t} kind={createKind} setKind={setCreateKind} prefill={createPrefill} clearPrefill={() => setCreatePrefill(null)} startNewChat={startNewChat} openChatHistory={openChatHistory} />,
+    create:      <SectionCreate      setRoute={setRoute} tweak={t} kind={createKind} setKind={setCreateKind} prefill={createPrefill} clearPrefill={() => setCreatePrefill(null)} startNewChat={startNewChat} openChatHistory={openChatHistory} primaryAgentName={primaryAgentName} />,
     usage:       <SectionUsage       setRoute={setRoute} tweak={t} />,
     support:     <SectionSupport     tweak={t} />,
-    settings:    <SectionSettings    tweak={t} setRoute={setRoute} impersonating={impersonating} />,
+    settings:    <SectionSettings    tweak={t} setRoute={setRoute} impersonating={impersonating} tab={settingsTab} setTab={setSettingsTab} notifications={notifications} markNotificationRead={markNotificationRead} markNotificationUnread={markNotificationUnread} markAllNotificationsRead={markAllNotificationsRead} agents={agents} setPrimaryAgent={setPrimaryAgent} />,
     admin:       <SectionAdmin       tab={adminTab} setTab={setAdminTab} enterAs={enterAs} />,
     solution:    <SectionSolutionView solution={openSol} setRoute={setRoute} openEdit={openEdit} editInChat={editInChat} openSolution={openSolution} tweak={t} />,
   };
 
   return (
     <div className="app grid-bg" data-screen-label={ROUTE_DEFS.find((r) => r.id === route)?.label || route} data-sidebar={sidebarCollapsed ? 'collapsed' : 'expanded'}>
-      <TopNav route={route} tweak={t} time={time} setRoute={setRoute} setTheme={setTheme} switchRole={switchRole} impersonating={impersonating} exitImpersonation={exitImpersonation} />
+      <TopNav route={route} tweak={t} time={time} setRoute={setRoute} setTheme={setTheme} switchRole={switchRole} impersonating={impersonating} exitImpersonation={exitImpersonation} notifications={notifications} markNotificationRead={markNotificationRead} markAllNotificationsRead={markAllNotificationsRead} openAllNotifications={openAllNotifications} />
       {impersonating && <ImpersonationBanner user={impersonating} onExit={exitImpersonation} />}
       <div className="body">
         <Sidebar route={route} setRoute={setRoute} role={effectiveRole} openCreate={openCreate} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed((c) => !c)} limitState={t.limitState} />

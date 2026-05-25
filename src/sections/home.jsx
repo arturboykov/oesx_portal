@@ -15,7 +15,8 @@ import { currentMe } from '../user.jsx';
    - flow: запущен флоу создания решения (уточняющие вопросы → превью)
    Кнопки сверху: «История · N» (выезжающая панель), «+ Новый чат». */
 
-function SectionChat({ setRoute, openCreate, openCreatePage, openSolution, tweak, trigger, clearTrigger, impersonating }) {
+function SectionChat({ setRoute, openCreate, openCreatePage, openSolution, tweak, trigger, clearTrigger, impersonating, primaryAgentName }) {
+  const botName = primaryAgentName || 'OpenClaw';
   const me = currentMe(tweak.userRole, impersonating);
 
   /* — История диалогов (мок) — */
@@ -102,7 +103,7 @@ function SectionChat({ setRoute, openCreate, openCreatePage, openSolution, tweak
       { role: 'system', text: `${isFork ? 'Форк' : 'Редактирование'} · «${sol.name}» · v${v} · ${new Date().toLocaleString('ru', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}` },
       { role: 'bot', skill: `${isFork ? 'FORK' : 'EDIT'}-${sol.kind.toUpperCase()}`,
         text: isFork
-          ? `Сделал копию «${sol.name}» (v${v}) у вас в OpenClaw. Что хотим изменить?`
+          ? `Сделал копию «${sol.name}» (v${v}) у вас в ${botName}. Что хотим изменить?`
           : `Открыл «${sol.name}» (v${v}) для правок. Что хотим изменить?`,
         preview: true,
       },
@@ -206,7 +207,7 @@ function SectionChat({ setRoute, openCreate, openCreatePage, openSolution, tweak
 
   function continueRefining() {
     if (!flow) return;
-    pushBot('Опишите, что изменить — OpenClaw внесёт правки.', { skill: 'REFINE' });
+    pushBot(`Опишите, что изменить — ${botName} внесёт правки.`, { skill: 'REFINE' });
     if (composerRef.current) composerRef.current.focus();
   }
 
@@ -234,6 +235,7 @@ function SectionChat({ setRoute, openCreate, openCreatePage, openSolution, tweak
       flow={flow}
       hero={isEmpty}
       showCreate={isEmpty}
+      botName={botName}
     />
   );
 
@@ -267,6 +269,7 @@ function SectionChat({ setRoute, openCreate, openCreatePage, openSolution, tweak
                 }}
                 flow={flow}
                 name={chatName}
+                botName={botName}
                 onExpand={() => setFlow((prev) => prev ? { ...prev, expanded: true } : null)}
                 onPublish={publishPreview}
                 onRefine={continueRefining}
@@ -354,7 +357,8 @@ function ChatHeader({ name, onRename, autoEditKey, historyOpen, setHistoryOpen, 
   );
 }
 
-function ChatMessages({ messages, onSuggest, flow, name, onExpand, onPublish, onRefine, onEditor }) {
+function ChatMessages({ messages, onSuggest, flow, name, botName, onExpand, onPublish, onRefine, onEditor }) {
+  const agent = botName || 'OpenClaw';
   return (
     <div className="chat-messages">
       {messages.map((m, i) => {
@@ -363,11 +367,11 @@ function ChatMessages({ messages, onSuggest, flow, name, onExpand, onPublish, on
         return (
           <div key={i} className="bubble bubble-bot">
             <div className="who">
-              <CubeLogo size={11} color="var(--teal-400)" /> OpenClaw
+              <CubeLogo size={11} color="var(--teal-400)" /> {agent}
               {m.skill && <span style={{ color: 'var(--fg-muted)', marginLeft: 6, fontWeight: 400 }}>· {m.skill}</span>}
             </div>
             {m.generating ?
-            <GeneratingInline /> :
+            <GeneratingInline botName={agent} /> :
             <div>{m.text}</div>}
             {m.suggestions && m.flowQuestion === flow?.step && flow?.previewState === 'asking' &&
             <div className="bubble-suggest-row">
@@ -398,11 +402,12 @@ function ChatMessages({ messages, onSuggest, flow, name, onExpand, onPublish, on
 
 }
 
-function GeneratingInline() {
+function GeneratingInline({ botName }) {
+  const agent = botName || 'OpenClaw';
   const stages = [
   { label: 'Извлекаю схемы источников', done: true },
   { label: 'Анонимизирую чувствительные поля', done: true },
-  { label: 'Подбираю шаблон OpenClaw', done: true },
+  { label: `Подбираю шаблон ${agent}`, done: true },
   { label: 'Генерирую превью', done: false, active: true },
   { label: 'Регистрирую артефакт', done: false }];
 
@@ -545,7 +550,7 @@ function PreviewOverlay({ flow, name, onClose, onPublish }) {
 }
 
 /* ─── Composer ─── */
-const ChatComposer = React.forwardRef(function ChatComposer({ draft, setDraft, onSend, onCreate, flow, hero, showCreate }, ref) {
+const ChatComposer = React.forwardRef(function ChatComposer({ draft, setDraft, onSend, onCreate, flow, hero, showCreate, botName }, ref) {
   const inputRef = React.useRef(null);
   const fileRef = React.useRef(null);
   const [attachment, setAttachment] = React.useState(null);
@@ -584,7 +589,7 @@ const ChatComposer = React.forwardRef(function ChatComposer({ draft, setDraft, o
 
   const disabled = flow && flow.previewState === 'generating';
   const placeholder = disabled
-    ? 'OpenClaw собирает превью…'
+    ? `${botName || 'OpenClaw'} собирает превью…`
     : flow && flow.previewState === 'asking'
       ? 'Ответьте текстом или выберите вариант выше'
       : 'Опишите задачу — например «покажи просадки КИО за вчера»';

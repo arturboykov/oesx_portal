@@ -10,6 +10,7 @@ import { OESDATA } from '../data.jsx';
 import { currentMe } from '../user.jsx';
 import { VersionHistoryModal } from './various.jsx';
 
+import { Modal } from '../portal.jsx';
 /* Solution view — открыть конкретное решение как полноценный дашборд.
    Поддерживает 4 содержимых: Бюджет, Объём за смену, Циклы погрузки, Монитор потерь.
    Прочие решения показывают обобщённый плейсхолдер. */
@@ -153,7 +154,7 @@ function SolutionHeader({ sol, version, historic, setRoute, openEdit, editInChat
               </span>
             }
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: 'var(--font-mono)', fontSize: 11, color: enabled ? 'var(--pos)' : 'var(--fg-muted)' }}>
-              · <span style={{ width: 6, height: 6, borderRadius: 999, background: enabled ? 'var(--pos)' : 'var(--fg-dim)' }} /> {enabled ? 'активно' : 'выключено'}
+              · <span style={{ width: 6, height: 6, borderRadius: 999, background: enabled ? 'var(--pos)' : 'var(--fg-dim)', opacity: enabled ? 1 : 0.45 }} /> {enabled ? 'активно' : 'выключено'}
             </span>
           </div>
         </div>
@@ -176,7 +177,7 @@ function ShareModal({ sol, onClose }) {
     });
   };
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <Modal onClose={onClose}>
       <div className="modal" style={{ width: 540 }} onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <div className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -228,7 +229,7 @@ function ShareModal({ sol, onClose }) {
           </button>
         </div>
       </div>
-    </div>);
+    </Modal>);
 
 }
 
@@ -1204,4 +1205,4 @@ function LossMetric({ m }) {
 
 }
 
-export { SectionSolutionView, DashBudget, DashVolumePerShift, DashCycleRating, DashLossesMonitor, GenericSolutionPreview };
+export { SectionSolutionView, DashBudget, DashVolumePerShift, DashCycleRating, DashLossesMonitor, GenericSolutionPreview, ShareModal };

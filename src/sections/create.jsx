@@ -21,7 +21,8 @@ const KIND_LABEL = {
   command: 'Команда',
 };
 
-function SectionCreate({ setRoute, tweak, kind, setKind, prefill, clearPrefill, startNewChat, openChatHistory }) {
+function SectionCreate({ setRoute, tweak, kind, setKind, prefill, clearPrefill, startNewChat, openChatHistory, primaryAgentName }) {
+  const botName = primaryAgentName || 'OpenClaw';
   const isEdit = !!prefill;
   const editVersion = prefill?.fromVersion;
   const nextVersion = isEdit ? editVersion + 1 : 1;
@@ -114,17 +115,17 @@ function SectionCreate({ setRoute, tweak, kind, setKind, prefill, clearPrefill, 
 
       <div className="create-shell-body">
         <div className="create-center">
-          <PreviewPane state={previewState} kind={kind} name={name} prefill={prefill} />
+          <PreviewPane state={previewState} kind={kind} name={name} prefill={prefill} botName={botName} />
         </div>
         <div className="create-chat">
           <div ref={scrollRef} className="scroll-y" style={{ flex: 1, padding: '18px 18px 8px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {script.slice(0, revealed).map((m, i) => <ChatBubble key={i} m={m} />)}
+            {script.slice(0, revealed).map((m, i) => <ChatBubble key={i} m={m} botName={botName} />)}
             {revealed < script.length && <TypingBubble />}
           </div>
           <CreateChatComposer
             draft={draft} setDraft={setDraft} onSend={sendDraft}
             disabled={previewState === 'generating'}
-            placeholder={previewState === 'generating' ? 'OpenClaw собирает превью…' : (isEdit ? 'Опишите, что изменить — OpenClaw внесёт правки' : 'Ответьте текстом — например, «период 30 смен, порог 90%»')} />
+            placeholder={previewState === 'generating' ? `${botName} собирает превью…` : (isEdit ? `Опишите, что изменить — ${botName} внесёт правки` : 'Ответьте текстом — например, «период 30 смен, порог 90%»')} />
         </div>
       </div>
     </div>
@@ -157,9 +158,6 @@ function CreateChatComposer({ draft, setDraft, onSend, disabled, placeholder }) 
           <IconSend size={13} />
         </button>
       </div>
-      <div style={{ marginTop: 8, fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.08em', color: 'var(--fg-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
-        <IconShield size={9} /> Маскирование чувствительных данных · вкл
-      </div>
     </div>
   );
 }
@@ -175,9 +173,9 @@ function CreateHeader({ name, setName, kind, solId, previewState, onPublish, onR
   return (
     <div className="create-shell-head">
       <div className="create-shell-head-row">
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 20 }}>
           <EditableTitle value={name} onChange={setName} />
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg-muted)', letterSpacing: '0.04em', flexShrink: 0 }}>id {solId}</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg-muted)', letterSpacing: '0.04em', flexShrink: 0, marginLeft: 4 }}>id {solId}</span>
         </div>
         <button className="btn btn-neutral btn-sm" onClick={onOpenHistory} title="История чатов">
           <IconClock size={11} /> История
@@ -239,7 +237,7 @@ function EditableTitle({ value, onChange }) {
 /* — Preview pane (states: idle/generating/ready) —
    In edit mode (prefill present), the "ready" preview shows the live dashboard for
    the existing solution rather than the generic kind-based preview. */
-function PreviewPane({ state, kind, name, prefill }) {
+function PreviewPane({ state, kind, name, prefill, botName }) {
   if (state === 'idle') {
     const Icon = kind === 'dash' ? IconBarChart : kind === 'alert' ? IconAlertCircle : IconZap;
     const sub = kind === 'dash'
@@ -282,7 +280,7 @@ function PreviewPane({ state, kind, name, prefill }) {
     );
   }
   if (state === 'generating') {
-    return <GeneratingPlaceholder />;
+    return <GeneratingPlaceholder botName={botName} />;
   }
   // ready — in edit mode render the actual dashboard for the source solution
   // (same as solution-view: known IDs → Dash component, otherwise a generic placeholder).
@@ -301,11 +299,12 @@ function PreviewPane({ state, kind, name, prefill }) {
   return null;
 }
 
-function GeneratingPlaceholder() {
+function GeneratingPlaceholder({ botName }) {
+  const agent = botName || 'OpenClaw';
   const stages = [
     'Извлекаю схемы источников',
     'Анонимизирую чувствительные поля',
-    'Подбираю шаблон OpenClaw',
+    `Подбираю шаблон ${agent}`,
     'Генерирую визуализации',
   ];
   const [done, setDone] = React.useState(0);
@@ -511,14 +510,14 @@ function PreviewKpiTile({ label, value, unit, tone, sub }) {
 }
 
 /* — Chat bubble — */
-function ChatBubble({ m }) {
+function ChatBubble({ m, botName }) {
   if (m.role === 'user') {
     return <div className="bubble bubble-user" style={{ maxWidth: '90%' }}>{m.text}</div>;
   }
   return (
     <div className="bubble bubble-bot" style={{ maxWidth: '95%' }}>
       <div className="who">
-        <CubeLogo size={11} color="var(--teal-400)" /> OpenClaw
+        <CubeLogo size={11} color="var(--teal-400)" /> {botName || 'OpenClaw'}
       </div>
       <div style={{ whiteSpace: 'pre-wrap' }}>{m.text}</div>
     </div>

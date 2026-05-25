@@ -3,14 +3,16 @@ import {
   CubeLogo, IconSearch, IconBell, IconLifeBuoy, IconChevronDown, IconArrowLeft,
   IconSettings, IconUsers, IconArrowRight, IconMoon, IconSun, IconMessageSquare,
   IconBox, IconCoins, IconShield, IconAlertCircle, IconFork, IconActivity,
-  IconPlus, IconBarChart, IconBrain, IconZap, IconPanelLeft,
+  IconPlus, IconBarChart, IconBrain, IconZap, IconPanelLeft, IconMail, IconCheck,
+  IconArrowUpRight,
 } from './icons.jsx';
 import { OESDATA } from './data.jsx';
 import { currentMe } from './user.jsx';
 
 /* Top nav + Sidebar + App shell. */
 
-function TopNav({ route, tweak, time, setRoute, setTheme, switchRole, impersonating, exitImpersonation }) {
+function TopNav({ route, tweak, time, setRoute, setTheme, switchRole, impersonating, exitImpersonation, notifications, markNotificationRead, markAllNotificationsRead, openAllNotifications }) {
+  const unreadCount = (notifications || []).filter((n) => !n.read).length;
   const me = currentMe(tweak.userRole, impersonating);
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [notifOpen, setNotifOpen] = React.useState(false);
@@ -56,14 +58,22 @@ function TopNav({ route, tweak, time, setRoute, setTheme, switchRole, impersonat
 
         {/* Notifications */}
         <div ref={notifRef} style={{ position: 'relative' }}>
-          <button className="icon-btn" aria-label="Уведомления" title="2 уведомления" onClick={() => setNotifOpen(!notifOpen)}>
+          <button className="icon-btn" aria-label="Уведомления" title={unreadCount > 0 ? `Непрочитанных: ${unreadCount}` : 'Уведомления'} onClick={() => setNotifOpen(!notifOpen)}>
             <IconBell size={15} />
-            <span className="bell-dot" />
+            {unreadCount > 0 && <span className="bell-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>}
           </button>
-          {notifOpen && <NotificationsPopover onClose={() => setNotifOpen(false)} setRoute={setRoute} />}
+          {notifOpen && (
+            <NotificationsPopover
+              notifications={notifications || []}
+              markRead={markNotificationRead}
+              markAllRead={markAllNotificationsRead}
+              openAll={() => { openAllNotifications && openAllNotifications(); setNotifOpen(false); }}
+              onClose={() => setNotifOpen(false)}
+              setRoute={setRoute} />
+          )}
         </div>
 
-        <button className="icon-btn" aria-label="Поддержка" title="Поддержка" onClick={() => setRoute('support')}><IconLifeBuoy size={15} /></button>
+        <button className="icon-btn" aria-label="Поддержка" title="Поддержка — ВЕБ ИТ-портал" onClick={() => window.open('https://it.eastmining.ru/ipc-itil/', '_blank', 'noopener,noreferrer')}><IconLifeBuoy size={15} /></button>
 
         <div style={{ width: 1, height: 18, background: 'var(--border-strong)', margin: '0 4px' }} />
 
@@ -71,12 +81,7 @@ function TopNav({ route, tweak, time, setRoute, setTheme, switchRole, impersonat
         <div ref={ref} style={{ position: 'relative' }}>
           <button className={`user-chip ${impersonating ? 'imp' : ''}`} onClick={() => setMenuOpen(!menuOpen)}>
             <span className="user-avatar">{me.initials}</span>
-            <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.2 }}>
-              <span className="uname">{me.name}</span>
-              <span className="urole" style={impersonating ? { color: 'var(--warn-orange)' } : null}>
-                {impersonating ? 'имперсонация · ' + me.role : me.role + (me.systemRole === 'admin' ? ' · ADMIN' : '')}
-              </span>
-            </span>
+            <span className="uname">{me.name}</span>
             <IconChevronDown size={12} style={{ color: 'var(--fg-muted)', transform: menuOpen ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform .15s' }} />
           </button>
           {menuOpen && (
@@ -94,13 +99,6 @@ function TopNav({ route, tweak, time, setRoute, setTheme, switchRole, impersonat
               <button className="popover-item" onClick={() => { setRoute('settings'); setMenuOpen(false); }}>
                 <IconSettings size={13} /> Аккаунт
               </button>
-              {!impersonating && (
-                <button className="popover-item" onClick={switchUser}>
-                  <IconUsers size={13} />
-                  <span style={{ flex: 1, textAlign: 'left' }}>Сменить пользователя</span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--teal-400)', letterSpacing: '0.08em' }}>{tweak.userRole === 'admin' ? '→ USER' : '→ ADMIN'}</span>
-                </button>
-              )}
               <div className="popover-divider" />
               <button className="popover-item" onClick={() => setMenuOpen(false)}>
                 <IconArrowRight size={13} /> Выйти
@@ -182,27 +180,37 @@ function SearchPopover({ onClose, setRoute }) {
   );
 }
 
-function NotificationsPopover({ onClose, setRoute }) {
-  const items = [
-    { kind: 'warn',  title: '80% лимита токенов',       text: 'Прогноз — лимит закончится через ≈9 дней.', t: '12 мин назад', route: 'usage' },
-    { kind: 'alert', title: 'Просадка КИО — R 9250 /5', text: 'КИО упал до 81% в ночную смену.',           t: '32 мин назад', route: 'chat' },
-    { kind: 'fork',  title: 'Форк вашего решения',      text: '«Просадки КИО» — Гречко И. С., логистика.', t: '2 ч назад',    route: 'solutions' },
-    { kind: 'info',  title: 'Обновление платформы',     text: 'Geist Mono обновлён до 1.4 — новые цифры.', t: 'вчера',        route: 'chat' },
-  ];
+function NotificationsPopover({ notifications, markRead, markAllRead, openAll, onClose, setRoute }) {
+  // В поповере показываем только непрочитанные — число в кружочке совпадает с длиной списка.
+  const unread = notifications.filter((n) => !n.read);
+  const TONE = { warn: 'var(--warn-orange)', alert: 'var(--neg)', fork: 'var(--info)', info: 'var(--info)', success: 'var(--pos)' };
+  const ICON = { warn: IconCoins, alert: IconAlertCircle, fork: IconFork, info: IconActivity, success: IconCheck };
   return (
     <div className="popover popover-notify" style={{ top: 'calc(100% + 6px)', right: 0, width: 380 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderBottom: '0.5px solid var(--border)' }}>
         <IconBell size={13} style={{ color: 'var(--fg)' }} />
-        <span style={{ fontFamily: 'var(--font-sans)', fontSize: 13, fontWeight: 500, color: 'var(--fg)' }}>Уведомления</span>
+        <span style={{ fontFamily: 'var(--font-sans)', fontSize: 13, fontWeight: 500, color: 'var(--fg)' }}>Непрочитанные · {unread.length}</span>
         <span style={{ flex: 1 }} />
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.10em', color: 'var(--fg-muted)' }}>{items.length} НОВЫХ</span>
+        {unread.length > 0 && (
+          <button onClick={() => markAllRead && markAllRead()}
+            style={{ background: 'transparent', border: 0, color: 'var(--teal-400)', fontFamily: 'var(--font-sans)', fontSize: 11, cursor: 'pointer', padding: 0 }}
+            title="Отметить все как прочитанные">
+            Отметить все
+          </button>
+        )}
       </div>
       <div style={{ maxHeight: 420, overflowY: 'auto' }}>
-        {items.map((n, i) => {
-          const tone = n.kind === 'warn' ? 'var(--warn-orange)' : n.kind === 'alert' ? 'var(--neg)' : n.kind === 'fork' ? 'var(--info)' : 'var(--fg-muted)';
-          const Ic = n.kind === 'warn' ? IconCoins : n.kind === 'alert' ? IconAlertCircle : n.kind === 'fork' ? IconFork : IconActivity;
+        {unread.length === 0 && (
+          <div style={{ padding: '28px 14px', textAlign: 'center', color: 'var(--fg-muted)', fontFamily: 'var(--font-sans)', fontSize: 12 }}>
+            Новых уведомлений нет
+          </div>
+        )}
+        {unread.map((n) => {
+          const tone = TONE[n.kind] || 'var(--fg-muted)';
+          const Ic = ICON[n.kind] || IconActivity;
           return (
-            <button key={i} className="notify-row" onClick={() => { setRoute(n.route); onClose(); }}>
+            <div key={n.id} className="notif-row"
+              onClick={() => { setRoute(n.route); onClose(); }}>
               <span style={{ width: 28, height: 28, borderRadius: 'var(--r-md)', background: 'var(--surface-2)', border: '0.5px solid var(--border)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: tone, flexShrink: 0 }}>
                 <Ic size={13} />
               </span>
@@ -211,13 +219,22 @@ function NotificationsPopover({ onClose, setRoute }) {
                 <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontSize: 12, color: 'var(--fg-muted)', lineHeight: 1.45, marginTop: 2 }}>{n.text}</span>
                 <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-muted)', marginTop: 4, letterSpacing: '0.04em' }}>{n.t}</span>
               </span>
-            </button>
+              <button
+                className="notif-envelope"
+                title="Пометить прочитанным"
+                onClick={(e) => { e.stopPropagation(); markRead && markRead(n.id); }}>
+                <IconMail size={13} />
+              </button>
+            </div>
           );
         })}
       </div>
       <div className="popover-divider" />
-      <button className="popover-item" style={{ justifyContent: 'center', color: 'var(--teal-400)' }} onClick={onClose}>
-        Отметить все как прочитанные
+      <button className="popover-item" style={{ justifyContent: 'space-between', color: 'var(--teal-400)' }} onClick={openAll}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <IconBell size={12} /> Все уведомления
+        </span>
+        <IconArrowUpRight size={12} />
       </button>
     </div>
   );
@@ -226,7 +243,7 @@ function NotificationsPopover({ onClose, setRoute }) {
 /* — Sidebar (collapsible) — */
 const SIDEBAR_GROUPS = [
   { items: ['chat','solutions'], create: true },
-  { items: ['usage','support'] },
+  { items: ['usage'] },
   { items: ['admin'], adminOnly: true },
 ];
 const ROUTE_DEFS = [
@@ -234,7 +251,6 @@ const ROUTE_DEFS = [
   { id: 'solutions',   label: 'Решения',          icon: IconBox,          product: 'SOLUTIONS',       count: () => OESDATA.solutions.length },
   { id: 'create',      label: 'Создать решение',  icon: IconPlus,         product: 'NEW SOLUTION',    count: null, hidden: true },
   { id: 'usage',       label: 'Потребление',      icon: IconCoins,        product: 'USAGE & LIMITS',  count: null },
-  { id: 'support',     label: 'Поддержка',        icon: IconLifeBuoy,     product: 'SUPPORT',         count: null },
   { id: 'settings',    label: 'Аккаунт',          icon: IconSettings,     product: 'ACCOUNT',         count: null },
   { id: 'admin',       label: 'Администрирование',icon: IconShield,       product: 'ADMIN',           count: null },
 ];

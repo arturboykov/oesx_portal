@@ -5,14 +5,16 @@ import {
   IconBookOpen, IconClock, IconUsers, IconLock, IconLink, IconSettings, IconMail,
   IconPaperclip, IconSend, IconChevronRight, IconUser, IconDatabase, IconBell,
   IconWrench, IconChevronDown, IconPlay, IconPause, IconCheck, IconPlus, IconBrain,
-  IconCpu, ChannelGlyph, CubeLogo,
+  IconCpu, IconMailOpen, ChannelGlyph, CubeLogo,
 } from '../icons.jsx';
 import { Chip, KindChip, Kpi, SourceKind } from '../parts.jsx';
 import { OESDATA } from '../data.jsx';
 import { currentMe } from '../user.jsx';
 import { CreateButton } from '../shell.jsx';
+import { ShareModal } from './solution-view.jsx';
 import { downloadCSV, makeShortId } from '../utils.jsx';
 
+import { Modal } from '../portal.jsx';
 /* My Solutions — каталог артефактов с фильтрами и действиями */
 
 const KIND_LABEL_RU = { dash: 'Дашборд', alert: 'Алерт', command: 'Команда' };
@@ -29,6 +31,7 @@ function SectionSolutions({ setRoute, openCreate, openSolution, openEdit, editIn
   const [search, setSearch] = React.useState('');
   const [historyFor, setHistoryFor] = React.useState(null);
   const [deletingId, setDeletingId] = React.useState(null);
+  const [sharingId, setSharingId] = React.useState(null);
 
   // scope: «Мои решения» + «Предоставлен доступ» = «Все»
   const inScope = (s) =>
@@ -210,6 +213,7 @@ function SectionSolutions({ setRoute, openCreate, openSolution, openEdit, editIn
                 }
               }}
               onHistory={() => setHistoryFor(s)}
+              onShare={() => setSharingId(s.id)}
               onDelete={() => setDeletingId(s.id)} />);
 
 
@@ -224,6 +228,7 @@ function SectionSolutions({ setRoute, openCreate, openSolution, openEdit, editIn
       </div>
       {historyFor && <VersionHistoryModal sol={historyFor} onClose={() => setHistoryFor(null)} onOpenVersion={(v) => {setHistoryFor(null);openSolution(historyFor.id, v);}} />}
       {deletingId && <DeleteSolutionModal id={deletingId} onClose={() => setDeletingId(null)} onConfirm={confirmDelete} />}
+      {sharingId && <ShareModal sol={sols.find((s) => s.id === sharingId)} onClose={() => setSharingId(null)} />}
     </div>);
 
 }
@@ -232,7 +237,7 @@ function SectionSolutions({ setRoute, openCreate, openSolution, openEdit, editIn
    Актив. · Решение · Тип · Автор · Версия · Запусков · Обновлено · Источники · Статус · меню */
 const SOL_COLS = '28px 1.5fr 116px 128px 58px 74px 112px 110px 116px 30px';
 
-function SolutionRow({ sol, alt, isOwner, canEdit, onView, onEdit, onToggle, onFork, onHistory, onDelete }) {
+function SolutionRow({ sol, alt, isOwner, canEdit, onView, onEdit, onToggle, onFork, onHistory, onDelete, onShare }) {
   const [hover, setHover] = React.useState(false);
   const [menuOpen, setMenuOpen] = React.useState(false);
   const menuRef = React.useRef(null);
@@ -261,7 +266,8 @@ function SolutionRow({ sol, alt, isOwner, canEdit, onView, onEdit, onToggle, onF
         <span style={{
           width: 8, height: 8, borderRadius: 999, display: 'inline-block',
           background: sol.enabled ? 'var(--pos)' : 'var(--fg-dim)',
-          boxShadow: sol.enabled ? '0 0 6px rgba(29,184,154,0.55)' : 'none'
+          boxShadow: sol.enabled ? '0 0 6px rgba(29,184,154,0.55)' : 'none',
+          opacity: sol.enabled ? 1 : 0.45,
         }} />
       </div>
       <div style={{ minWidth: 0 }}>
@@ -322,7 +328,7 @@ function SolutionRow({ sol, alt, isOwner, canEdit, onView, onEdit, onToggle, onF
         </span>
       </div>
       <div ref={menuRef} style={{ position: 'relative' }} onClick={(e) => e.stopPropagation()}>
-        <button className="icon-btn" style={{ width: 26, height: 26, opacity: hover || menuOpen ? 1 : 0.5 }} aria-label="Действия" onClick={() => setMenuOpen(!menuOpen)}>
+        <button className="icon-btn" style={{ width: 26, height: 26, opacity: hover || menuOpen ? 1 : 0.5 }} aria-label="Действия" title="Действия" onClick={() => setMenuOpen(!menuOpen)}>
           <IconMoreH size={13} />
         </button>
         {menuOpen &&
@@ -337,6 +343,11 @@ function SolutionRow({ sol, alt, isOwner, canEdit, onView, onEdit, onToggle, onF
 
           <button className="popover-item" onClick={() => {setMenuOpen(false);onFork && onFork();}}>
                 <IconFork size={13} /> Форкнуть в чат
+              </button>
+          }
+            {sol.published &&
+          <button className="popover-item" onClick={() => {setMenuOpen(false);onShare && onShare();}}>
+                <IconShare size={13} /> Поделиться
               </button>
           }
             {canEdit &&
@@ -364,7 +375,7 @@ function VersionHistoryModal({ sol, onClose, onOpenVersion }) {
   const versions = OESDATA.versionMap[sol.id] || [];
   const [selected, setSelected] = React.useState(versions[0]?.v);
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <Modal onClose={onClose}>
       <div className="modal" style={{ width: 640 }} onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <div className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -413,7 +424,7 @@ function VersionHistoryModal({ sol, onClose, onOpenVersion }) {
           <button className="btn btn-primary" onClick={() => onOpenVersion(selected)}><IconEye size={11} /> Открыть v{selected}</button>
         </div>
       </div>
-    </div>);
+    </Modal>);
 
 }
 
@@ -422,7 +433,7 @@ function DeleteSolutionModal({ id, onClose, onConfirm }) {
   const sol = OESDATA.solutions.find((s) => s.id === id);
   if (!sol) return null;
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <Modal onClose={onClose}>
       <div className="modal" style={{ width: 460 }} onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <div className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -445,7 +456,7 @@ function DeleteSolutionModal({ id, onClose, onConfirm }) {
           <button className="btn btn-danger" onClick={onConfirm}><IconTrash size={11} /> Удалить</button>
         </div>
       </div>
-    </div>);
+    </Modal>);
 
 }
 
@@ -731,7 +742,7 @@ function SupportComposeModal({ me, onClose, onSubmit }) {
   const canSubmit = subject.trim().length > 0 && body.trim().length > 0;
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <Modal onClose={onClose}>
       <div className="modal" style={{ width: 640 }} onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <div className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -799,7 +810,7 @@ function SupportComposeModal({ me, onClose, onSubmit }) {
           </button>
         </div>
       </div>
-    </div>);
+    </Modal>);
 
 }
 
@@ -885,7 +896,7 @@ function TicketDetailModal({ ticket, onClose }) {
   ...ticket.replies.map((r) => ({ t: r.t, who: r.who, text: r.text }))];
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <Modal onClose={onClose}>
       <div className="modal" style={{ width: 720 }} onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <div className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
@@ -928,7 +939,7 @@ function TicketDetailModal({ ticket, onClose }) {
           <button className="btn btn-neutral" onClick={onClose}>Закрыть</button>
         </div>
       </div>
-    </div>);
+    </Modal>);
 
 }
 
@@ -953,9 +964,11 @@ function FaqRow({ q, a, last }) {
 
 /* — Settings (Аккаунт) — tabbed:
    Профиль / Каналы / Источники данных / Безопасность / Уведомления */
-function SectionSettings({ tweak, setRoute, impersonating }) {
+function SectionSettings({ tweak, setRoute, impersonating, tab: tabProp, setTab: setTabProp, notifications, markNotificationRead, markNotificationUnread, markAllNotificationsRead, agents, setPrimaryAgent }) {
   const me = currentMe(tweak?.userRole || 'user', impersonating);
-  const [tab, setTab] = React.useState('profile');
+  const [localTab, setLocalTab] = React.useState(tabProp || 'profile');
+  const tab = tabProp != null ? tabProp : localTab;
+  const setTab = setTabProp || setLocalTab;
 
   const userRecord = OESDATA.users.find((u) => u.name === me.name) || OESDATA.users[0];
   const userDomainIds = me.domains || userRecord.domains || ['excavators'];
@@ -990,12 +1003,12 @@ function SectionSettings({ tweak, setRoute, impersonating }) {
         )}
       </div>
 
-      {tab === 'profile' && <SettingsProfile me={me} user={userRecord} />}
-      {tab === 'agent' && <SettingsAgent user={userRecord} />}
+      {tab === 'profile' && <SettingsProfile me={me} user={userRecord} agents={agents} setPrimaryAgent={setPrimaryAgent} />}
+      {tab === 'agent' && <SettingsAgent user={userRecord} agents={agents} />}
       {tab === 'channels' && <SettingsChannels />}
       {tab === 'sources' && <SettingsSources domains={userDomains} sourcesByDomain={sourcesByDomain} />}
       {tab === 'security' && <SettingsSecurity />}
-      {tab === 'notify' && <SettingsNotify />}
+      {tab === 'notify' && <SettingsNotify notifications={notifications || []} markRead={markNotificationRead} markUnread={markNotificationUnread} markAllRead={markAllNotificationsRead} setRoute={setRoute} />}
     </div>);
 
 }
@@ -1025,8 +1038,14 @@ function groupSourcesByDomain(allSources, userDomainIds) {
 }
 
 /* — Profile pane — */
-function SettingsProfile({ me, user }) {
+function SettingsProfile({ me, user, agents, setPrimaryAgent }) {
   const u = user || OESDATA.users[0];
+  const agentList = agents && agents.length ? agents : OESDATA.assistant.agents;
+  const [hoverAgent, setHoverAgent] = React.useState(null);
+  const makePrimary = (name) => {
+    if (setPrimaryAgent) setPrimaryAgent(name);
+    if (window.notify) window.notify({ title: 'Основной агент изменён', body: name, kind: 'success' });
+  };
   const dockerShort = (u.dockerId || '').slice(0, 24) + '…';
   const volume = `openclaw-${u.uuid}`;
   const refresh = () => {
@@ -1046,7 +1065,8 @@ function SettingsProfile({ me, user }) {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
           <Field label="ФИО" value={me.name} />
           <Field label="Email (SSO)" value={me.email} />
-          <Field label="Роль" value={me.role} />
+          <Field label="Должность" value={me.role} />
+          <Field label="Роль" value={me.systemRole === 'admin' ? 'Администратор' : 'Пользователь'} />
           <Field label="Подразделение" value={me.department} />
           <Field label="Workspace ID" value={me.workspaceId} mono />
           <Field label="Workspace создан" value={me.workspaceCreatedAt} mono />
@@ -1102,12 +1122,67 @@ function SettingsProfile({ me, user }) {
           </div>
         </div>
       </div>
+
+      {/* АГЕНТЫ — перечень подключённых агентов (read-only сводка; полная настройка во вкладке «Настройки агента») */}
+      <div className="card" style={{ padding: 0, overflow: 'hidden', marginTop: 14 }}>
+        <div style={{ padding: '12px 18px', borderBottom: '0.5px solid var(--border)' }}>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--fg-muted)' }}>Агенты · {agentList.length}</span>
+        </div>
+        <div>
+          {agentList.map((ag, i) => (
+            <div
+              key={ag.name}
+              onMouseEnter={() => setHoverAgent(ag.name)}
+              onMouseLeave={() => setHoverAgent((cur) => (cur === ag.name ? null : cur))}
+              style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', borderBottom: i < agentList.length - 1 ? '0.5px solid var(--border)' : 'none', background: ag.primary ? 'rgba(29,184,154,0.04)' : 'transparent', transition: 'background 120ms ease' }}
+            >
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div>
+                  <div style={{ fontFamily: 'var(--font-sans)', fontSize: 13, fontWeight: 500, color: 'var(--fg)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {ag.name}
+                    {ag.primary && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '2px 7px', borderRadius: 999, background: 'rgba(29,184,154,0.12)', border: '0.5px solid rgba(29,184,154,0.32)', color: 'var(--pos)' }}>
+                        <span className="dot dot-pos" /> Основной
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-muted)', marginTop: 2 }}>{ag.role}</div>
+                </div>
+              </div>
+              {!ag.primary && hoverAgent === ag.name && (
+                <button className="btn btn-ghost btn-sm" onClick={() => makePrimary(ag.name)}>
+                  <IconCheck size={11} /> Сделать основным
+                </button>
+              )}
+              <Chip kind={ag.primary ? 'neutral' : 'command'}>{ag.model}</Chip>
+            </div>
+          ))}
+        </div>
+      </div>
     </>);
 
 }
 
 /* — Channels pane (was SectionChannels) — */
 function SettingsChannels() {
+  const [channels, setChannels] = React.useState(OESDATA.channels);
+  const [modal, setModal] = React.useState(null); // { mode: 'connect'|'configure'|'disconnect', channel }
+
+  const finishConnect = (ch, handle) => {
+    setChannels((prev) => prev.map((c) => c.kind === ch.kind ? { ...c, state: 'connected', linkedAs: handle } : c));
+    setModal(null);
+    if (window.notify) window.notify({ title: `${ch.name} подключён`, body: `Привязан как ${handle}`, kind: 'success' });
+  };
+  const finishConfigure = (ch) => {
+    setModal(null);
+    if (window.notify) window.notify({ title: `Настройки сохранены`, body: ch.name, kind: 'success' });
+  };
+  const finishDisconnect = (ch) => {
+    setChannels((prev) => prev.map((c) => c.kind === ch.kind ? { ...c, state: 'available', linkedAs: null } : c));
+    setModal(null);
+    if (window.notify) window.notify({ title: `${ch.name} отключён`, body: 'Канал переведён в доступные.', kind: 'success' });
+  };
+
   return (
     <>
       <div className="section-head">
@@ -1118,7 +1193,7 @@ function SettingsChannels() {
         Единый Workspace для всех каналов — память, история и контекст общие.
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
-        {OESDATA.channels.map((c) =>
+        {channels.map((c) =>
         <div key={c.kind} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <ChannelGlyph kind={c.kind} size={20} />
@@ -1139,15 +1214,109 @@ function SettingsChannels() {
               </div>
           }
             <div style={{ display: 'flex', gap: 8 }}>
-              {c.state === 'connected' && <><button className="btn btn-neutral btn-sm"><IconSettings size={11} /> Настроить</button><button className="btn btn-neutral btn-sm">Отключить</button></>}
-              {c.state === 'pending' && <button className="btn btn-warn btn-sm">Связаться с ИТ</button>}
-              {c.state === 'available' && <button className="btn btn-ghost btn-sm">Подключить</button>}
+              {c.state === 'connected' && <>
+                <button className="btn btn-neutral btn-sm" onClick={() => setModal({ mode: 'configure', channel: c })}><IconSettings size={11} /> Настроить</button>
+                <button className="btn btn-neutral btn-sm" onClick={() => setModal({ mode: 'disconnect', channel: c })}>Отключить</button>
+              </>}
+              {c.state === 'pending' && <button className="btn btn-warn btn-sm" onClick={() => { if (window.notify) window.notify({ title: 'Запрос в ИТ отправлен', body: c.name, kind: 'success' }); }}>Связаться с ИТ</button>}
+              {c.state === 'available' && <button className="btn btn-ghost btn-sm" onClick={() => setModal({ mode: 'connect', channel: c })}>Подключить</button>}
             </div>
           </div>
         )}
       </div>
+
+      {modal?.mode === 'connect' && <ChannelConnectModal channel={modal.channel} onClose={() => setModal(null)} onConnect={(h) => finishConnect(modal.channel, h)} />}
+      {modal?.mode === 'configure' && <ChannelConfigureModal channel={modal.channel} onClose={() => setModal(null)} onSave={() => finishConfigure(modal.channel)} />}
+      {modal?.mode === 'disconnect' && <ChannelDisconnectModal channel={modal.channel} onClose={() => setModal(null)} onConfirm={() => finishDisconnect(modal.channel)} />}
     </>);
 
+}
+
+/* — Подключение канала: ввод адреса/логина → toast «привязан» — */
+function ChannelConnectModal({ channel, onClose, onConnect }) {
+  const placeholder = channel.kind === 'email' ? 'user@vgk.ru' : channel.kind === 'telegram' ? '@username' : channel.kind === 'teams' ? 'user@vgk.ru' : 'идентификатор';
+  const [handle, setHandle] = React.useState('');
+  const valid = handle.trim().length > 0;
+  return (
+    <Modal onClose={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-head">
+          <div className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <ChannelGlyph kind={channel.kind} size={16} /> Подключить {channel.name}
+          </div>
+          <button className="icon-btn" style={{ width: 28, height: 28 }} onClick={onClose}><IconX size={13} /></button>
+        </div>
+        <div className="modal-body">
+          <div style={{ fontFamily: 'var(--font-sans)', fontSize: 12, color: 'var(--fg-muted)', lineHeight: 1.55 }}>
+            Введите ваш {channel.kind === 'telegram' ? 'username' : 'идентификатор'} в {channel.name}. После подтверждения мы отправим вам ссылку для привязки аккаунта.
+          </div>
+          <div className="field-stack">
+            <div className="field-label">{channel.kind === 'telegram' ? 'Username' : channel.kind === 'email' ? 'Email' : 'Идентификатор'} *</div>
+            <input className="input mono" placeholder={placeholder} value={handle} onChange={(e) => setHandle(e.target.value)} />
+          </div>
+          <div style={{ padding: 12, background: 'rgba(106,158,184,0.06)', border: '0.5px solid rgba(106,158,184,0.30)', borderRadius: 'var(--r-md)', fontFamily: 'var(--font-sans)', fontSize: 12, color: 'var(--fg-muted)', lineHeight: 1.5 }}>
+            <IconShield size={11} style={{ verticalAlign: 'middle', color: 'var(--info)' }} /> Память Workspace, история и контекст останутся общими для всех каналов.
+          </div>
+        </div>
+        <div className="modal-foot">
+          <button className="btn btn-neutral" onClick={onClose}>Отмена</button>
+          <button className="btn btn-primary" disabled={!valid} onClick={() => onConnect(handle.trim())}><IconLink size={11} /> Привязать</button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+/* — Настройки канала: тумблеры уведомлений → toast «сохранено» — */
+function ChannelConfigureModal({ channel, onClose, onSave }) {
+  return (
+    <Modal onClose={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-head">
+          <div className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <IconSettings size={15} style={{ color: 'var(--teal-400)' }} /> Настройки · {channel.name}
+          </div>
+          <button className="icon-btn" style={{ width: 28, height: 28 }} onClick={onClose}><IconX size={13} /></button>
+        </div>
+        <div className="modal-body">
+          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <RowToggle title="Получать алерты" desc="Доставка срабатываний алертов в этот канал" value={true} />
+            <RowToggle title="Утренний дайджест" desc="Сводка по парку и решениям в 06:30" value={false} />
+            <RowToggle title="Уведомления о форках" desc="Когда коллеги форкают ваши решения" value={true} />
+          </div>
+        </div>
+        <div className="modal-foot">
+          <button className="btn btn-neutral" onClick={onClose}>Отмена</button>
+          <button className="btn btn-primary" onClick={onSave}><IconCheck size={11} /> Сохранить</button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+/* — Отключение канала: подтверждение + toast — */
+function ChannelDisconnectModal({ channel, onClose, onConfirm }) {
+  return (
+    <Modal onClose={onClose}>
+      <div className="modal" style={{ width: 460 }} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-head">
+          <div className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <IconX size={15} style={{ color: 'var(--neg)' }} /> Отключить {channel.name}?
+          </div>
+          <button className="icon-btn" style={{ width: 28, height: 28 }} onClick={onClose}><IconX size={13} /></button>
+        </div>
+        <div className="modal-body">
+          <div style={{ fontFamily: 'var(--font-sans)', fontSize: 13, color: 'var(--fg)', lineHeight: 1.55 }}>
+            Канал «{channel.name}» больше не будет получать уведомления и срабатывания алертов. Привязка {channel.linkedAs ? <span style={{ fontFamily: 'var(--font-mono)' }}>«{channel.linkedAs}»</span> : 'аккаунта'} будет снята.
+          </div>
+        </div>
+        <div className="modal-foot">
+          <button className="btn btn-neutral" onClick={onClose}>Отмена</button>
+          <button className="btn btn-danger" onClick={onConfirm}>Отключить</button>
+        </div>
+      </div>
+    </Modal>
+  );
 }
 
 /* — Sources pane: 2-level grouping by Domain — */
@@ -1294,7 +1463,7 @@ function SubagentModal({ onClose, onCreate }) {
   const [model, setModel] = React.useState('CLAUDE-OPUS-4-6');
   const valid = name.trim().length > 0;
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <Modal onClose={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <div className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -1327,7 +1496,7 @@ function SubagentModal({ onClose, onCreate }) {
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -1338,7 +1507,7 @@ function ConnectorModal({ onClose, onCreate }) {
   const [endpoint, setEndpoint] = React.useState('');
   const valid = name.trim().length > 0 && endpoint.trim().length > 0;
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <Modal onClose={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <div className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -1377,7 +1546,7 @@ function ConnectorModal({ onClose, onCreate }) {
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -1393,7 +1562,7 @@ CALL sessions_recent WITH EXACTLY THESE 3 PARAMETERS AND NOTHING ELSE: user_id, 
 const DEFAULT_SUBAGENT_PROMPT = `You are an expert software developer. You write clean, efficient, production-ready code.
 ## Dashboards & HTML output When asked for a dashboard, chart, report, visualization — produce a self-contained HTML file with inline styles.`;
 
-function SettingsAgent({ user, admin }) {
+function SettingsAgent({ user, admin, agents }) {
   const [model, setModel] = React.useState('default');
   const [prompt, setPrompt] = React.useState(DEFAULT_AGENT_PROMPT);
   const promptRef = React.useRef(null);
@@ -1403,9 +1572,21 @@ function SettingsAgent({ user, admin }) {
     ta.style.height = Math.min(ta.scrollHeight, 600) + 'px';
   }, [prompt]);
 
+  const primaryAgent = (agents || OESDATA.assistant.agents).find((a) => a.primary) || (agents || OESDATA.assistant.agents)[0];
+
   const [subagents, setSubagents] = React.useState([
     { id: 'sa-dev', name: 'Разработчик', subId: 'openai/claude-sonnet-4-5', instructions: DEFAULT_SUBAGENT_PROMPT },
   ]);
+  const [editingSubId, setEditingSubId] = React.useState(null);
+  const [editingSubText, setEditingSubText] = React.useState('');
+  const startEditSub = (sa) => { setEditingSubId(sa.id); setEditingSubText(sa.instructions); };
+  const saveEditSub = () => {
+    setSubagents((p) => p.map((x) => (x.id === editingSubId ? { ...x, instructions: editingSubText } : x)));
+    if (window.notify) window.notify({ title: 'Инструкции саб-агента обновлены', kind: 'success' });
+    setEditingSubId(null);
+    setEditingSubText('');
+  };
+  const cancelEditSub = () => { setEditingSubId(null); setEditingSubText(''); };
   const [addingSub, setAddingSub] = React.useState(false);
   const blankSub = { name: '', subId: '', model: 'По умолчанию', instructions: '' };
   const [subForm, setSubForm] = React.useState(blankSub);
@@ -1446,6 +1627,17 @@ function SettingsAgent({ user, admin }) {
       <div className="card" style={{ padding: 0, overflow: 'hidden', marginBottom: 12 }}>
         {cardHead(<IconCpu size={13} style={{ color: 'var(--teal-400)' }} />, 'Основной агент')}
         <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* Имя текущего основного агента — заметным блоком сверху карточки */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 'var(--r-md)', background: 'rgba(29,184,154,0.06)', border: '0.5px solid rgba(29,184,154,0.30)' }}>
+            <CubeLogo size={16} color="var(--teal-400)" />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--fg-muted)' }}>Имя</div>
+              <div style={{ fontFamily: 'var(--font-sans)', fontSize: 15, fontWeight: 600, color: 'var(--fg)', marginTop: 2 }}>{primaryAgent.name}</div>
+            </div>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '3px 8px', borderRadius: 999, background: 'rgba(29,184,154,0.12)', border: '0.5px solid rgba(29,184,154,0.32)', color: 'var(--pos)' }}>
+              <span className="dot dot-pos" /> Основной
+            </span>
+          </div>
           <div className="field-stack">
             <div className="field-label">Модель</div>
             <select className="input" value={model} onChange={(e) => setModel(e.target.value)}>
@@ -1469,20 +1661,38 @@ function SettingsAgent({ user, admin }) {
       <div className="card" style={{ padding: 0, overflow: 'hidden', marginBottom: 12 }}>
         {cardHead(<IconBrain size={13} style={{ color: 'var(--teal-400)' }} />, `Саб-агенты · ${subagents.length}`)}
         <div style={{ padding: 14 }}>
-          {subagents.map((sa) => (
-            <div key={sa.id} style={{ padding: '12px 14px', border: '0.5px solid var(--border)', borderRadius: 'var(--r-md)', background: 'var(--surface-2)', marginBottom: 10 }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 4 }}>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontFamily: 'var(--font-sans)', fontSize: 13, fontWeight: 500, color: 'var(--fg)' }}>{sa.name}</div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-muted)', marginTop: 2 }}>{sa.subId}</div>
+          {subagents.map((sa) => {
+            const isEditing = editingSubId === sa.id;
+            return (
+              <div key={sa.id} style={{ padding: '12px 14px', border: isEditing ? '0.5px solid var(--teal-400)' : '0.5px solid var(--border)', borderRadius: 'var(--r-md)', background: 'var(--surface-2)', marginBottom: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 4 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontFamily: 'var(--font-sans)', fontSize: 13, fontWeight: 500, color: 'var(--fg)' }}>{sa.name}</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-muted)', marginTop: 2 }}>{sa.subId}</div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    {!isEditing && (
+                      <button onClick={() => startEditSub(sa)} style={{ background: 'transparent', border: 0, color: 'var(--teal-400)', fontFamily: 'var(--font-sans)', fontSize: 12, cursor: 'pointer' }}>Редактировать</button>
+                    )}
+                    <button onClick={() => setSubagents((p) => p.filter((x) => x.id !== sa.id))} style={{ background: 'transparent', border: 0, color: 'var(--neg)', fontFamily: 'var(--font-sans)', fontSize: 12, cursor: 'pointer' }}>Удалить</button>
+                  </div>
                 </div>
-                <button onClick={() => setSubagents((p) => p.filter((x) => x.id !== sa.id))} style={{ background: 'transparent', border: 0, color: 'var(--neg)', fontFamily: 'var(--font-sans)', fontSize: 12, cursor: 'pointer' }}>Удалить</button>
+                {isEditing ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+                    <textarea className="textarea" rows={6} value={editingSubText} onChange={(e) => setEditingSubText(e.target.value)} placeholder="Системные инструкции саб-агента…" />
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button className="btn btn-primary btn-sm" onClick={saveEditSub}>Сохранить</button>
+                      <button className="btn btn-neutral btn-sm" onClick={cancelEditSub}>Отмена</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ fontFamily: 'var(--font-sans)', fontSize: 11, color: 'var(--fg-muted)', lineHeight: 1.45, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                    {sa.instructions}
+                  </div>
+                )}
               </div>
-              <div style={{ fontFamily: 'var(--font-sans)', fontSize: 11, color: 'var(--fg-muted)', lineHeight: 1.45, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                {sa.instructions}
-              </div>
-            </div>
-          ))}
+            );
+          })}
           {addingSub ? (
             <div style={{ padding: 14, border: '0.5px solid var(--teal-400)', borderRadius: 'var(--r-md)', background: 'var(--surface-2)', display: 'flex', flexDirection: 'column', gap: 8 }}>
               <input className="input" placeholder="Имя саб-агента" value={subForm.name} onChange={(e) => setSubForm({ ...subForm, name: e.target.value })} />
@@ -1557,15 +1767,76 @@ function SettingsSecurity() {
 }
 
 /* — Notifications — */
-function SettingsNotify() {
+function SettingsNotify({ notifications, markRead, markUnread, markAllRead, setRoute }) {
+  const list = notifications || [];
+  const unreadCount = list.filter((n) => !n.read).length;
+  const TONE = { warn: 'var(--warn-orange)', alert: 'var(--neg)', fork: 'var(--info)', info: 'var(--info)', success: 'var(--pos)' };
+  const ICON = { warn: IconBell, alert: IconAlertCircle, fork: IconFork, info: IconBell, success: IconCheck };
   return (
     <>
-      <div className="section-head"><span className="sh-title">Уведомления</span><div className="sh-line" /></div>
-      <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div className="section-head"><span className="sh-title">Настройки уведомлений</span><div className="sh-line" /></div>
+      <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 22 }}>
         <RowToggle title="Лимит токенов" desc="Уведомлять при 80% и 100% лимита" value={true} />
-        <RowToggle title="Форки моих решений" desc="Когда коллега форкнул решение из Marketplace" value={true} />
+        <RowToggle title="Форки моих решений" desc="Когда коллега форкнул решение" value={true} />
         <RowToggle title="Срабатывание алертов" desc="Дублировать в Teams + почту" value={false} />
-        <RowToggle title="Дайджест по Marketplace" desc="Раз в неделю — топ новых решений в подразделении" value={false} />
+        <RowToggle title="Дайджест по подразделению" desc="Раз в неделю — топ новых решений" value={false} />
+      </div>
+
+      <div className="section-head">
+        <span className="sh-title">Все уведомления</span>
+        <span className="sh-count">{list.length}</span>
+        {unreadCount > 0 && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginLeft: 10, fontFamily: 'var(--font-mono)', fontSize: 10, padding: '3px 8px', borderRadius: 4, background: 'rgba(196,124,50,0.12)', border: '0.5px solid rgba(196,124,50,0.30)', color: 'var(--warn-orange)' }}>{unreadCount} непрочитанных</span>}
+        <div className="sh-line" />
+        {unreadCount > 0 && (
+          <button onClick={() => markAllRead && markAllRead()}
+            style={{ background: 'transparent', border: 0, color: 'var(--teal-400)', fontFamily: 'var(--font-sans)', fontSize: 12, cursor: 'pointer' }}>
+            Отметить все как прочитанные
+          </button>
+        )}
+      </div>
+      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+        {list.length === 0 && (
+          <div style={{ padding: 32, textAlign: 'center', fontFamily: 'var(--font-sans)', fontSize: 13, color: 'var(--fg-muted)' }}>Уведомлений нет</div>
+        )}
+        {list.map((n, i) => {
+          const tone = TONE[n.kind] || 'var(--fg-muted)';
+          const Ic = ICON[n.kind] || IconBell;
+          return (
+            <div key={n.id} className="notif-row"
+              style={{
+                borderBottom: i < list.length - 1 ? '0.5px solid var(--border)' : 'none',
+                background: n.read ? 'transparent' : 'rgba(196,124,50,0.04)',
+              }}
+              onClick={() => { setRoute && setRoute(n.route); }}>
+              <span style={{ width: 30, height: 30, borderRadius: 'var(--r-md)', background: 'var(--surface-2)', border: '0.5px solid var(--border)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: tone, flexShrink: 0 }}>
+                <Ic size={14} />
+              </span>
+              <span style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-sans)', fontSize: 13, fontWeight: n.read ? 400 : 500, color: 'var(--fg)' }}>
+                  {!n.read && <span style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--warn-orange)' }} />}
+                  {n.title}
+                </span>
+                <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontSize: 12, color: 'var(--fg-muted)', lineHeight: 1.45, marginTop: 2 }}>{n.text}</span>
+                <span style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-muted)', marginTop: 4, letterSpacing: '0.04em' }}>{n.t}</span>
+              </span>
+              {!n.read ? (
+                <button
+                  className="notif-envelope"
+                  title="Пометить прочитанным"
+                  onClick={(e) => { e.stopPropagation(); markRead && markRead(n.id); }}>
+                  <IconMailOpen size={13} />
+                </button>
+              ) : (
+                <button
+                  className="notif-envelope"
+                  title="Пометить непрочитанным"
+                  onClick={(e) => { e.stopPropagation(); markUnread && markUnread(n.id); }}>
+                  <IconMail size={13} />
+                </button>
+              )}
+            </div>
+          );
+        })}
       </div>
     </>);
 
