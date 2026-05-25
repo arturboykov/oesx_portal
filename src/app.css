@@ -882,7 +882,9 @@ canvas, svg.no-transition * { transition: none !important; }
   min-height: 56px;
   min-width: 0;
 }
-.chat-header > div:first-child { min-width: 0; }
+.chat-header > div:first-child { flex: 1; min-width: 0; }
+.chat-header .editable-title { display: flex; flex: 1; min-width: 0; }
+.chat-header .editable-title > span:first-child { flex: 1; min-width: 0; }
 .chat-header .btn { flex-shrink: 0; }
 .chat-header .btn.active { background: var(--teal-dim); color: var(--teal-400); border-color: var(--border-strong); }
 
