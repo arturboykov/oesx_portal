@@ -180,7 +180,7 @@ function SectionChat({ setRoute, openCreate, openCreatePage, openSolution, tweak
     // Обычный чат — бот отвечает в духе ассистента
     pushUser(text);
     setTimeout(() => {
-      pushBot(genericReply(text), { skill: 'OPENCLAW' });
+      pushBot(genericReply(text));
     }, 500);
   }
 
@@ -828,7 +828,7 @@ function makeHistoryMessages(title) {
   return [
   { role: 'system', text: `Чат восстановлен · «${title}»` },
   { role: 'user', text: title.toLowerCase().includes('q&a') ? 'Какой регламент ТО для PC 4000 каждые 250 моточасов?' : `Покажи: ${title.toLowerCase()}` },
-  { role: 'bot', skill: 'OPENCLAW', text: 'Готово. Результат загружен в эту вкладку — посмотрите предыдущие сообщения и решение, сохранённое в разделе «Решения».' }];
+  { role: 'bot', text: 'Готово. Результат загружен в эту вкладку — посмотрите предыдущие сообщения и решение, сохранённое в разделе «Решения».' }];
 
 }
 
