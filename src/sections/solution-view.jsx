@@ -61,6 +61,9 @@ function SectionSolutionView({ solution, setRoute, openEdit, editInChat, openSol
 
 function SolutionHeader({ sol, version, historic, setRoute, openEdit, editInChat, canEdit, isOwner, enabled, onToggle, onShare, onVersions }) {
   const v = version || sol.version;
+  const versions = OESDATA.versionMap[sol.id] || [];
+  const currentVersion = versions.find((x) => x.v === v) || versions[0];
+  const versionDate = currentVersion?.date;
   const handleFork = () => {
     if (editInChat) {
       editInChat(sol.id, v, 'fork');
@@ -138,13 +141,16 @@ function SolutionHeader({ sol, version, historic, setRoute, openEdit, editInChat
                 color: 'var(--teal-400)', cursor: 'pointer',
               }}>
               <IconGitBranch size={10} /> v{v}
+              {versionDate && <span style={{ opacity: 0.7, marginLeft: 4 }}>· {versionDate}</span>}
             </button>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg-muted)' }}>
               · id {sol.shortId}
             </span>
+            {sol.kind === 'dash' &&
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg-muted)' }}>
-              · Обновлено {sol.lastRun}
+              · Данные обновлены {sol.lastRun === '—' ? 'ещё не обновлялись' : sol.lastRun}
             </span>
+            }
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg-muted)' }}>
               · {sol.runs.toLocaleString('ru')} запусков
             </span>

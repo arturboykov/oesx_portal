@@ -85,14 +85,15 @@ function SectionSolutions({ setRoute, openCreate, openSolution, openEdit, editIn
   const exportCSV = () => {
     downloadCSV(
       `oes-x-решения-${new Date().toISOString().slice(0, 10)}.csv`,
-      ['Решение', 'Тип', 'Автор', 'Версия', 'Запусков', 'Обновлено', 'Источники', 'Статус', 'Активно'],
+      ['Решение', 'Тип', 'Автор', 'Версия', 'Создание версии', 'Данные обновлены', 'Запусков', 'Источники', 'Статус', 'Активно'],
       list.map((s) => [
         s.name,
         KIND_LABEL_RU[s.kind] || s.kind,
         s.author || '',
         'v' + s.version,
+        OESDATA.versionMap[s.id]?.[0]?.date || s.updated || '',
+        s.kind === 'dash' ? s.lastRun : '',
         s.runs,
-        s.lastRun,
         s.sources.join('; '),
         s.published ? 'опубликовано' : 'черновик',
         s.enabled ? 'да' : 'нет',
@@ -186,7 +187,6 @@ function SectionSolutions({ setRoute, openCreate, openSolution, openEdit, editIn
           <span>Автор</span>
           <span>Версия</span>
           <span>Запусков</span>
-          <span style={{ textAlign: 'right', paddingRight: 16 }}>Обновлено</span>
           <span>Источники</span>
           <span>Статус</span>
           <span></span>
@@ -234,8 +234,10 @@ function SectionSolutions({ setRoute, openCreate, openSolution, openEdit, editIn
 }
 
 /* Shared column template — keeps header and rows in sync.
-   Актив. · Решение · Тип · Автор · Версия · Запусков · Обновлено · Источники · Статус · меню */
-const SOL_COLS = '28px 1.5fr 116px 128px 58px 74px 112px 110px 116px 30px';
+   Актив. · Решение · Тип · Автор · Версия · Запусков · Источники · Статус · меню
+   Колонка «Версия» содержит номер версии + дату её создания (= последней редакции),
+   поэтому отдельной колонки «Обновлено» больше нет. */
+const SOL_COLS = '28px 1.5fr 116px 128px 120px 74px 110px 116px 30px';
 
 function SolutionRow({ sol, alt, isOwner, canEdit, onView, onEdit, onToggle, onFork, onHistory, onDelete, onShare }) {
   const [hover, setHover] = React.useState(false);
@@ -296,16 +298,20 @@ function SolutionRow({ sol, alt, isOwner, canEdit, onView, onEdit, onToggle, onF
           {sol.author || '—'}
         </span>
       </div>
-      <div>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3 }}>
         <button
           onClick={(e) => {e.stopPropagation();onHistory && onHistory();}}
           title={`История версий (${versions.length})`}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 8px', borderRadius: 4, background: 'var(--teal-dim)', border: '0.5px solid var(--border-strong)', color: 'var(--teal-400)', fontFamily: 'var(--font-mono)', fontSize: 11, cursor: 'pointer' }}>
           <IconGitBranch size={10} /> v{sol.version}
         </button>
+        {versions[0]?.date &&
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-muted)', whiteSpace: 'nowrap' }}>
+            {versions[0].date}
+          </span>
+        }
       </div>
       <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fg)' }}>{sol.runs.toLocaleString('ru')}</div>
-      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-muted)', textAlign: 'right', paddingRight: 16 }}>{sol.lastRun}</div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
         {sol.sources.slice(0, 2).map((src) =>
         <span key={src} style={{
