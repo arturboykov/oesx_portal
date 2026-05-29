@@ -105,9 +105,13 @@ a { color: inherit; text-decoration: none; }
   padding: 14px 12px; display: flex; flex-direction: column; gap: 2px;
   position: sticky; top: var(--nav-h); height: calc(100vh - var(--nav-h));
   overflow: visible; transition: padding .22s var(--ease-apple);
+  /* Собственный слой выше контента — иначе тултипы перекрываются карточками
+     (.main не образует stacking-контекст, sticky-сайдбар без z-index — тоже). */
+  z-index: 40;
 }
 .sidebar.collapsed { padding: 14px 6px; }
 .sb-toggle {
+  position: relative;
   display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: var(--r-md);
   font-family: var(--font-sans); font-size: 12px; color: var(--fg-muted);
   cursor: pointer; transition: all .15s var(--ease-apple); border: 0.5px solid transparent;
@@ -117,6 +121,7 @@ a { color: inherit; text-decoration: none; }
 .sb-divider { height: 0.5px; background: var(--border); margin: 8px 4px; }
 .sidebar.collapsed .sb-divider { margin: 8px 2px; }
 .sb-item {
+  position: relative;
   display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: var(--r-md);
   font-family: var(--font-sans); font-size: 13px; color: var(--fg-muted); letter-spacing: -0.01em;
   cursor: pointer; transition: all .15s var(--ease-apple); border: 0.5px solid transparent; width: 100%;
@@ -126,6 +131,7 @@ a { color: inherit; text-decoration: none; }
 .sb-item .count { margin-left: auto; font-family: var(--font-mono); font-size: 10px; color: inherit; opacity: 0.7; }
 .sb-item-create { border: 0.5px solid transparent; width: 100%; }
 .sb-item-create:hover { background: var(--teal-dim) !important; color: var(--teal-400) !important; }
+.sb-limit-mini { position: relative; }
 
 .sidebar.collapsed .sb-item, .sidebar.collapsed .sb-toggle { justify-content: center; padding: 9px; }
 .sidebar.collapsed .sb-item > span:not(.count),

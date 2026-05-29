@@ -4,6 +4,7 @@ import TopNav from './TopNav.vue';
 import Sidebar from './Sidebar.vue';
 import Toast from 'primevue/toast';
 import ConfirmDialog from 'primevue/confirmdialog';
+import TweaksPanel from './TweaksPanel.vue';
 import { useAppState } from '../store';
 
 const app = useAppState();
@@ -19,5 +20,6 @@ const sidebarAttr = computed(() => (app.state.sidebarCollapsed ? 'collapsed' : '
     </div>
     <Toast position="bottom-right" />
     <ConfirmDialog />
+    <TweaksPanel />
   </div>
 </template>

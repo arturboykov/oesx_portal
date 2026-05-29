@@ -45,9 +45,11 @@ function onKeydown(e: KeyboardEvent) { if (e.key === 'Enter' && !e.shiftKey) { e
   <div class="create-shell">
     <!-- Шапка -->
     <div class="create-header">
-      <input v-model="title" class="create-title" />
+      <label class="create-titlebox">
+        <input v-model="title" class="create-title-input" />
+        <Icon name="edit" :size="13" class="create-title-pencil" />
+      </label>
       <span class="create-id">id: {{ shortId }}</span>
-      <span style="flex: 1" />
       <button class="hbtn"><Icon name="git-branch" :size="12" /> История</button>
       <button class="hbtn"><Icon name="message-square" :size="12" /> Новый чат</button>
     </div>
@@ -88,12 +90,15 @@ function onKeydown(e: KeyboardEvent) { if (e.key === 'Enter' && !e.shiftKey) { e
 
 <style scoped>
 .create-shell { display: flex; flex-direction: column; height: calc(100vh - var(--nav-h)); min-width: 0; }
-.create-header { display: flex; align-items: center; gap: 12px; padding: 12px 24px; border-bottom: 0.5px solid var(--border); }
-.create-title { flex: 0 1 auto; min-width: 0; background: transparent; border: 0.5px solid transparent; border-radius: var(--r-sm); padding: 6px 8px; font-family: var(--font-sans); font-size: 16px; font-weight: 500; color: var(--fg); }
-.create-title:hover { border-color: var(--border); }
-.create-title:focus { outline: 0; border-color: var(--teal-400); background: var(--surface-2); }
-.create-id { font-family: var(--font-mono); font-size: 12px; color: var(--fg-muted); }
-.hbtn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: var(--r-md); background: var(--surface-2); border: 0.5px solid var(--border); color: var(--fg-muted); font-family: var(--font-mono); font-size: 11px; cursor: pointer; }
+.create-header { display: flex; align-items: center; gap: 12px; padding: 10px 24px; background: var(--surface); border-bottom: 0.5px solid var(--border); }
+.create-titlebox { flex: 1; min-width: 0; height: 34px; display: flex; align-items: center; gap: 8px; padding: 0 10px; border-radius: var(--r-sm); border: 0.5px solid transparent; cursor: text; transition: all .15s var(--ease-apple); }
+.create-titlebox:hover { border-color: var(--border); background: var(--surface-2); }
+.create-titlebox:focus-within { border-color: var(--teal-400); background: var(--surface-2); }
+.create-title-input { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; font-family: var(--font-sans); font-size: 16px; font-weight: 500; color: var(--fg); }
+.create-title-pencil { color: var(--fg-muted); opacity: 0; transition: opacity .15s; flex-shrink: 0; }
+.create-titlebox:hover .create-title-pencil, .create-titlebox:focus-within .create-title-pencil { opacity: 1; }
+.create-id { font-family: var(--font-mono); font-size: 12px; color: var(--fg-muted); flex-shrink: 0; }
+.hbtn { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: var(--r-md); background: var(--surface-2); border: 0.5px solid var(--border); color: var(--fg-muted); font-family: var(--font-mono); font-size: 11px; cursor: pointer; flex-shrink: 0; }
 .hbtn:hover { color: var(--fg); border-color: var(--border-strong); }
 
 .create-body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 380px; }
@@ -122,7 +127,7 @@ function onKeydown(e: KeyboardEvent) { if (e.key === 'Enter' && !e.shiftKey) { e
 .bubble-user { background: var(--teal-dim); color: var(--fg); border: 0.5px solid var(--border-strong); border-bottom-right-radius: 4px; }
 .bubble-bot { background: var(--surface-2); color: var(--fg); border: 0.5px solid var(--border); border-bottom-left-radius: 4px; }
 .cchat-foot { padding: 12px 16px; border-top: 0.5px solid var(--border); }
-.composer { display: flex; align-items: flex-end; gap: 8px; background: var(--surface-2); border: 0.5px solid var(--border-strong); border-radius: var(--r-lg); padding: 8px 8px 8px 12px; }
+.composer { display: flex; align-items: center; gap: 8px; background: var(--surface-2); border: 0.5px solid var(--border-strong); border-radius: var(--r-lg); padding: 8px 8px 8px 12px; }
 .composer-input { flex: 1; min-width: 0; resize: none; background: transparent; border: 0; outline: 0; font-family: var(--font-sans); font-size: 13px; line-height: 20px; color: var(--fg); max-height: 200px; }
 .composer-btn.send { width: 32px; height: 32px; border-radius: var(--r-md); display: inline-flex; align-items: center; justify-content: center; background: var(--teal-400); color: var(--fg-on-teal); border: 0.5px solid var(--teal-400); flex-shrink: 0; }
 .composer-btn.send:hover:not(:disabled) { background: var(--teal-300); }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Icon } from '../icons';
 import { ROUTE_DEFS, SIDEBAR_GROUPS, KIND_OPTIONS } from '../routes-def';
@@ -20,10 +20,27 @@ function go(id: string) {
   if (d) router.push(d.path);
 }
 
-// Create-дропдаун
+// Create-дропдаун — телепортируется в body, чтобы не перекрываться
+// контентом страницы (вложенные stacking-контексты сайдбара).
 const createOpen = ref(false);
-const createRef = ref<HTMLElement | null>(null);
-function onDown(e: MouseEvent) { if (createRef.value && !createRef.value.contains(e.target as Node)) createOpen.value = false; }
+const popStyle = ref<Record<string, string>>({});
+function positionPop() {
+  const el = document.getElementById('sb-create-btn');
+  if (!el) return;
+  const r = el.getBoundingClientRect();
+  popStyle.value = collapsed.value
+    ? { position: 'fixed', top: r.top + 'px', left: r.right + 6 + 'px', width: '220px', zIndex: '400' }
+    : { position: 'fixed', top: r.bottom + 4 + 'px', left: r.left + 'px', width: r.width + 'px', zIndex: '400' };
+}
+function toggleCreate() {
+  createOpen.value = !createOpen.value;
+  if (createOpen.value) nextTick(positionPop);
+}
+function onDown(e: MouseEvent) {
+  const t = e.target as HTMLElement;
+  if (t.closest('#sb-create-btn') || t.closest('.sb-create-pop')) return;
+  createOpen.value = false;
+}
 onMounted(() => document.addEventListener('mousedown', onDown));
 onUnmounted(() => document.removeEventListener('mousedown', onDown));
 function openCreate(kindId: string) {
@@ -50,22 +67,25 @@ const limitMaxLabel = (OESDATA.billing.limitTokens / 1_000_000).toFixed(1);
         <div v-if="gi > 0" class="sb-divider" />
 
         <!-- Create -->
-        <div v-if="g.create" ref="createRef" style="position: relative">
+        <div v-if="g.create" style="position: relative">
           <button
+            id="sb-create-btn"
             class="sb-item sb-item-create"
             data-tooltip="Создать решение"
             :style="{ color: 'var(--teal-400)', background: createOpen ? 'var(--teal-dim)' : 'transparent', borderColor: createOpen ? 'var(--border-strong)' : 'transparent' }"
-            @click="createOpen = !createOpen"
+            @click="toggleCreate"
           >
             <Icon name="plus" :size="15" />
             <span>Создать решение</span>
             <Icon v-if="!collapsed" name="chevron-down" :size="12" :style="{ marginLeft: 'auto', transform: createOpen ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform .15s' }" />
           </button>
-          <div v-if="createOpen" class="popover" :style="collapsed ? { top: '0', left: 'calc(100% + 6px)', width: '220px' } : { top: 'calc(100% + 4px)', left: '0', right: '0' }">
-            <button v-for="k in KIND_OPTIONS" :key="k.id" class="popover-item" @click="openCreate(k.id)">
-              <Icon :name="k.icon" :size="13" /> {{ k.label }}
-            </button>
-          </div>
+          <Teleport to="body">
+            <div v-if="createOpen" class="popover sb-create-pop" :style="popStyle">
+              <button v-for="k in KIND_OPTIONS" :key="k.id" class="popover-item" @click="openCreate(k.id)">
+                <Icon :name="k.icon" :size="13" /> {{ k.label }}
+              </button>
+            </div>
+          </Teleport>
         </div>
 
         <!-- Items -->

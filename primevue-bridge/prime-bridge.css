@@ -68,6 +68,29 @@
 .p-dialog { border-width: 0.5px; }
 .p-popover { border-width: 0.5px; }
 
+/* ── Menu (popup) — hover/focus как в OES X, а не белая заливка ──────────
+   Дефолтный highlight PrimeVue в тёмной теме делал текст невидимым. */
+.p-menu { background: var(--surface); border: 0.5px solid var(--border-strong); }
+.p-menu .p-menu-item-content { color: var(--fg); border-radius: var(--r-sm); }
+.p-menu .p-menu-item-link { color: var(--fg); }
+.p-menu .p-menu-item-content:hover,
+.p-menu .p-menu-item.p-focus > .p-menu-item-content {
+  background: var(--surface-3) !important;
+  color: var(--fg) !important;
+}
+.p-menu .p-menu-item-link:hover { background: transparent; color: var(--fg); }
+.p-menu .p-menu-separator { border-top: 0.5px solid var(--border); }
+
+/* ── Select / Dropdown — тот же читаемый hover, что и у Menu ─────────────── */
+.p-select-overlay { background: var(--surface); border: 0.5px solid var(--border-strong); }
+.p-select-option { color: var(--fg); }
+.p-select-option:not(.p-select-option-selected):hover,
+.p-select-option.p-focus {
+  background: var(--surface-3) !important;
+  color: var(--fg) !important;
+}
+.p-select-option.p-select-option-selected { color: var(--teal-400); background: var(--teal-dim); }
+
 /* ── Tabs — подчёркивание активной вкладки как .tab.active ──────────────── */
 .p-tab {
   font-family: var(--font-mono);

@@ -66,7 +66,7 @@ function toggleEnabled(s: Solution) {
 }
 
 // Меню действий (одна popup-инстанция, модель строится под строку)
-type OesMenuItem = MenuItem & { oesIcon?: IconName };
+type OesMenuItem = MenuItem & { oesIcon?: IconName; oesDanger?: boolean };
 const menu = ref<InstanceType<typeof Menu> | null>(null);
 const menuItems = ref<OesMenuItem[]>([]);
 function openMenu(event: MouseEvent, s: Solution) {
@@ -79,7 +79,7 @@ function openMenu(event: MouseEvent, s: Solution) {
   ];
   if (s.published) items.push({ label: 'Поделиться', oesIcon: 'share', command: () => openShare(s) });
   if (canEdit) items.push({ label: s.enabled ? 'Отключить' : 'Включить', oesIcon: s.enabled ? 'pause' : 'play', command: () => toggleEnabled(s) });
-  if (canEdit) items.push({ separator: true }, { label: 'Удалить', oesIcon: 'trash', command: () => askDelete(s) });
+  if (canEdit) items.push({ separator: true }, { label: 'Удалить', oesIcon: 'trash', oesDanger: true, command: () => askDelete(s) });
   menuItems.value = items;
   menu.value?.toggle(event);
 }
@@ -230,7 +230,7 @@ function exportCSV() {
 
     <Menu ref="menu" :model="menuItems" popup>
       <template #item="{ item, props }">
-        <a class="oes-menu-item" v-bind="props.action">
+        <a class="oes-menu-item" :class="{ danger: (item as OesMenuItem).oesDanger }" v-bind="props.action">
           <Icon v-if="(item as OesMenuItem).oesIcon" :name="(item as OesMenuItem).oesIcon!" :size="13" />
           <span>{{ item.label }}</span>
         </a>
@@ -281,6 +281,9 @@ function exportCSV() {
 
 /* Menu item с иконкой */
 .oes-menu-item { display: flex; align-items: center; gap: 9px; }
+/* Красный остаётся и на hover (мост перекрашивает контент в --fg). */
+.oes-menu-item.danger,
+.oes-menu-item.danger:hover { color: var(--neg) !important; }
 
 /* Таблица: шапка без боковых/верхних бордеров — только нижний, как у строк */
 :deep(.p-datatable-thead > tr > th) { border-top: 0; border-left: 0; border-right: 0; border-bottom: 0.5px solid var(--border-strong); padding: 10px 16px; }

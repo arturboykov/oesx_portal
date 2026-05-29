@@ -88,8 +88,8 @@ export const OESXPreset = definePreset(Aura, {
     // colorScheme: значения одинаковы для light/dark — тему переключает
     // [data-theme] в tokens.css (см. шапку файла).
     colorScheme: {
-      light: oesxColors(),
-      dark:  oesxColors(),
+      light: oesxColors('light'),
+      dark:  oesxColors('dark'),
     },
   },
 
@@ -202,24 +202,26 @@ export const OESXPreset = definePreset(Aura, {
   },
 });
 
-/** Семантические цвета OES X для одного colorScheme (light===dark, см. шапку). */
-function oesxColors() {
+/** Семантические цвета OES X для colorScheme.
+ *  ВАЖНО про surface-ramp: PrimeVue выбирает фоны hover/focus из этого ramp.
+ *  В DARK-режиме Aura берёт ВЫСОКИЕ ступени под фоны — поэтому их надо направить
+ *  на ТЁМНЫЕ поверхности (а не на светлые --fg), иначе hover будет белым.
+ *  В LIGHT-режиме обычный порядок: низкие — светлые, высокие — тёмные (для текста). */
+function oesxColors(scheme: 'light' | 'dark') {
+  const surface =
+    scheme === 'dark'
+      ? {
+          0: 'var(--fg)', 50: 'var(--fg)', 100: 'var(--fg-muted)', 200: 'var(--fg-dim)', 300: 'var(--fg-dim)',
+          400: 'var(--surface-3)', 500: 'var(--surface-3)', 600: 'var(--surface-2)', 700: 'var(--surface)',
+          800: 'var(--surface)', 900: 'var(--bg-elev)', 950: 'var(--bg)',
+        }
+      : {
+          0: 'var(--surface)', 50: 'var(--surface)', 100: 'var(--surface-2)', 200: 'var(--surface-3)', 300: 'var(--surface-3)',
+          400: 'var(--fg-dim)', 500: 'var(--fg-dim)', 600: 'var(--fg-muted)', 700: 'var(--fg-muted)',
+          800: 'var(--fg)', 900: 'var(--fg)', 950: 'var(--fg)',
+        };
   return {
-    surface: {
-      0:   'var(--bg)',
-      50:  'var(--surface)',
-      100: 'var(--surface-2)',
-      200: 'var(--surface-3)',
-      300: 'var(--bg-elev)',
-      // верхние ступени ramp PrimeVue использует редко; направляем на fg-линию
-      400: 'var(--fg-dim)',
-      500: 'var(--fg-dim)',
-      600: 'var(--fg-muted)',
-      700: 'var(--fg-muted)',
-      800: 'var(--fg)',
-      900: 'var(--fg)',
-      950: 'var(--fg)',
-    },
+    surface,
     primary: {
       color: 'var(--teal-400)',
       contrastColor: 'var(--fg-on-teal)',

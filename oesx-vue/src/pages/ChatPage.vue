@@ -18,6 +18,10 @@ interface Msg { id: number; role: 'user' | 'bot'; text: string }
 const messages = ref<Msg[]>([]);
 const input = ref('');
 const started = computed(() => messages.value.length > 0);
+const chatTitle = ref('Новый чат');
+const historyCount = 11;
+function newChat() { messages.value = []; input.value = ''; chatTitle.value = 'Новый чат'; }
+function soon(w: string) { toast.add({ severity: 'info', summary: w, detail: 'В следующей фазе миграции', life: 2500 }); }
 const ta = ref<HTMLTextAreaElement | null>(null);
 let seq = 0;
 
@@ -54,6 +58,16 @@ function attach() { toast.add({ severity: 'info', summary: 'Вложение ф�
 
 <template>
   <div class="chat-shell">
+    <!-- Шапка чата -->
+    <div class="chat-header">
+      <label class="chat-titlebox">
+        <input v-model="chatTitle" class="chat-title-input" />
+        <Icon name="edit" :size="13" class="chat-title-pencil" />
+      </label>
+      <button class="hbtn" @click="soon('История чатов')"><Icon name="clock" :size="12" /> История · {{ historyCount }}</button>
+      <button class="hbtn" @click="newChat"><Icon name="plus" :size="12" /> Новый чат</button>
+    </div>
+
     <!-- Пустой hero -->
     <div v-if="!started" class="chat-hero">
       <div class="hero-logo"><CubeLogo :size="40" color="var(--teal-400)" /></div>
@@ -108,6 +122,17 @@ function attach() { toast.add({ severity: 'info', summary: 'Вложение ф�
 <style scoped>
 .chat-shell { display: flex; flex-direction: column; height: calc(100vh - var(--nav-h)); min-width: 0; }
 
+/* Шапка */
+.chat-header { display: flex; align-items: center; gap: 8px; padding: 10px 24px; background: var(--surface); border-bottom: 0.5px solid var(--border); }
+.chat-titlebox { flex: 1; min-width: 0; height: 34px; display: flex; align-items: center; gap: 8px; padding: 0 10px; border-radius: var(--r-sm); border: 0.5px solid transparent; cursor: text; transition: all .15s var(--ease-apple); }
+.chat-titlebox:hover { border-color: var(--border); background: var(--surface-2); }
+.chat-titlebox:focus-within { border-color: var(--teal-400); background: var(--surface-2); }
+.chat-title-input { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; font-family: var(--font-sans); font-size: 16px; font-weight: 500; color: var(--fg); }
+.chat-title-pencil { color: var(--fg-muted); opacity: 0; transition: opacity .15s; flex-shrink: 0; }
+.chat-titlebox:hover .chat-title-pencil, .chat-titlebox:focus-within .chat-title-pencil { opacity: 1; }
+.hbtn { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: var(--r-md); background: var(--surface-2); border: 0.5px solid var(--border); color: var(--fg-muted); font-family: var(--font-mono); font-size: 11px; cursor: pointer; flex-shrink: 0; }
+.hbtn:hover { color: var(--fg); border-color: var(--border-strong); }
+
 /* Hero */
 .chat-hero { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 24px; }
 .hero-logo { opacity: 0.95; }
@@ -115,7 +140,7 @@ function attach() { toast.add({ severity: 'info', summary: 'Вложение ф�
 .hero-create { position: relative; }
 
 /* Composer */
-.composer { display: flex; align-items: flex-end; gap: 8px; width: min(680px, 92vw); background: var(--surface-2); border: 0.5px solid var(--border-strong); border-radius: var(--r-lg); padding: 10px 10px 10px 14px; }
+.composer { display: flex; align-items: center; gap: 8px; width: min(680px, 92vw); background: var(--surface-2); border: 0.5px solid var(--border-strong); border-radius: var(--r-lg); padding: 8px 10px 8px 14px; }
 .composer-input { flex: 1; min-width: 0; resize: none; background: transparent; border: 0; outline: 0; font-family: var(--font-sans); font-size: 14px; line-height: 22px; color: var(--fg); max-height: 330px; }
 .composer-actions { display: flex; align-items: center; gap: 6px; }
 .composer-btn { width: 32px; height: 32px; border-radius: var(--r-md); display: inline-flex; align-items: center; justify-content: center; color: var(--fg-muted); border: 0.5px solid var(--border); background: var(--surface); transition: all .15s; }

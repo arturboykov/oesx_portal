@@ -17,11 +17,11 @@ export interface Notification {
   read: boolean;
 }
 
-type LimitState = 'normal' | 'warn75' | 'warn80' | 'stop';
+export type LimitState = 'normal' | 'warn75' | 'warn80' | 'stop';
 
 const state = reactive({
   theme: 'dark' as 'dark' | 'light',
-  userRole: 'user' as UserRole,
+  userRole: 'admin' as UserRole,
   impersonating: null as Impersonation | null,
   limitState: 'normal' as LimitState,
   sidebarCollapsed: false,
@@ -49,6 +49,13 @@ export function useAppState() {
   }
   function switchRole() {
     state.userRole = state.userRole === 'admin' ? 'user' : 'admin';
+  }
+  function setRole(r: UserRole) {
+    state.userRole = r;
+    state.impersonating = null; // переключение роли — выход из имперсонации
+  }
+  function setLimitState(s: LimitState) {
+    state.limitState = s;
   }
   function impersonate(u: { id: string; name: string; initials: string; position: string; email: string; role: string; domains?: string[] }) {
     state.impersonating = {
@@ -92,6 +99,8 @@ export function useAppState() {
     setTheme,
     toggleTheme,
     switchRole,
+    setRole,
+    setLimitState,
     impersonate,
     exitImpersonation,
     toggleSidebar,
