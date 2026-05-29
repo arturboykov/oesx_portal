@@ -1,0 +1,110 @@
+/* OES X · PrimeVue 4 bridge
+   ─────────────────────────────────────────────────────────────────────────
+   Тонкий слой поверх пресета (oesx-preset.ts). Закрывает то, что неудобно
+   выразить токеном пресета: моноширинная типографика контролов, ровный фокус,
+   и bespoke-классы (kind-чипы), которых в PrimeVue нет.
+
+   ВАЖНО про порядок подключения (см. README.md):
+   1) tokens.css            ← источник истины (импортируется первым)
+   2) PrimeVue theme         ← инжектится PrimeVue в runtime
+   3) prime-bridge.css       ← этот файл, импортируется ПОСЛЕДНИМ
+
+   Если правки отсюда не перебивают стили PrimeVue — включите cssLayer и
+   положите бридж в свой слой, либо повысьте специфичность (см. README). */
+
+/* ── Глобально: шрифт PrimeVue = шрифт OES X ───────────────────────────── */
+:root {
+  --p-font-family: var(--font-sans);
+  /* Подстраховка: ключевые runtime-переменные PrimeVue → токены OES X,
+     на случай если какой-то компонент мимо пресета. */
+  --p-focus-ring-color: var(--teal-400);
+  --p-content-border-radius: var(--r-lg);
+}
+
+/* ── Кнопки PrimeVue = .btn OES X (моно, мелкий кегль, spacing) ─────────── */
+.p-button {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  border-width: 0.5px;
+}
+.p-button-sm { font-size: 10px; }
+
+/* disabled primary — «серая, нажать нельзя» (как .btn-primary:disabled) */
+.p-button:disabled {
+  background: var(--surface-3) !important;
+  color: var(--fg-dim) !important;
+  border-color: transparent !important;
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+/* ── DataTable header = .utable-head (моно 9px / uppercase / spacing) ───── */
+.p-datatable-header-cell,
+.p-datatable-column-title {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.p-datatable-header-cell,
+.p-datatable-tbody > tr > td,
+.p-datatable-thead > tr > th {
+  border-width: 0.5px;
+}
+
+/* ── Inputs тоньше дефолтных бордеров PrimeVue ─────────────────────────── */
+.p-inputtext,
+.p-textarea {
+  border-width: 0.5px;
+  font-size: 13px;
+}
+.p-inputtext:focus,
+.p-textarea:focus {
+  background: var(--surface);
+}
+
+/* ── Dialog / Popover — половинные бордеры в стиле OES X ────────────────── */
+.p-dialog { border-width: 0.5px; }
+.p-popover { border-width: 0.5px; }
+
+/* ── Tabs — подчёркивание активной вкладки как .tab.active ──────────────── */
+.p-tab {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   BESPOKE: kind-чипы решений (дашборд / алерт / команда).
+   В PrimeVue нет «типа решения» — это доменная сущность OES X. Используйте
+   на <Tag> через :class или оборачивайте в <span>. Значения 1:1 из parts.jsx.
+   ═══════════════════════════════════════════════════════════════════════ */
+.oesx-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 10px;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: var(--r-sm);
+  white-space: nowrap;
+  border: 0.5px solid transparent;
+}
+.oesx-kind--dash    { background: var(--chip-dash-bg);  color: var(--chip-dash-fg);  border-color: var(--chip-dash-b); }
+.oesx-kind--alert   { background: var(--chip-alert-bg); color: var(--chip-alert-fg); border-color: var(--chip-alert-b); }
+.oesx-kind--command { background: rgba(29,184,154,0.10); color: var(--teal-400);     border-color: rgba(29,184,154,0.30); }
+.oesx-kind--draft   { background: rgba(74,104,120,0.12); color: var(--fg-muted);     border-color: var(--border); }
+
+/* статус-точка перед текстом чипа (опционально) */
+.oesx-kind__dot { width: 6px; height: 6px; border-radius: 999px; background: currentColor; display: inline-block; }
+
+/* ── Семантические заливки прогресс-баров (как .bar.warn/.danger/.pos) ──── */
+.p-progressbar.is-warn   .p-progressbar-value { background: var(--warn-orange); }
+.p-progressbar.is-danger .p-progressbar-value { background: var(--neg); }
+.p-progressbar.is-pos    .p-progressbar-value { background: var(--pos); }

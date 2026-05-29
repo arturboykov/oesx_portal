@@ -2,3 +2,12 @@ node_modules
 dist
 .vite
 *.local
+
+# Портативный Node (~100 МБ) — не коммитим, ставится отдельно
+.toolchain/
+
+# Системные артефакты Windows
+desktop.ini
+
+# Память Claude Code — локальная, не для репозитория
+memory/
