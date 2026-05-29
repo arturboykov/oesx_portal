@@ -10,6 +10,7 @@ import Column from 'primevue/column';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import InputText from 'primevue/inputtext';
+import FloatLabel from 'primevue/floatlabel';
 import { Icon, CubeLogo, type IconName } from '../icons';
 import { OESDATA, type User, type Domain } from '../data';
 
@@ -212,16 +213,18 @@ function domainApis(d: Domain) { return d.apis; }
 
     <!-- Создать домен -->
     <Dialog v-model:visible="addDomainOpen" modal header="Создание домена" :style="{ width: '460px' }">
-      <div class="req-field">
-        <label class="field-label">Имя домена *</label>
-        <InputText v-model="newDomain.name" placeholder="например, logistics" style="width: 100%" />
-      </div>
-      <div class="req-field">
-        <label class="field-label">Описание</label>
-        <InputText v-model="newDomain.desc" placeholder="Логистика — внутренние перевозки" style="width: 100%" />
+      <div class="dlg-fields">
+        <FloatLabel variant="on">
+          <InputText id="dom-name" v-model="newDomain.name" style="width: 100%" />
+          <label for="dom-name">Имя домена *</label>
+        </FloatLabel>
+        <FloatLabel variant="on">
+          <InputText id="dom-desc" v-model="newDomain.desc" style="width: 100%" />
+          <label for="dom-desc">Описание</label>
+        </FloatLabel>
       </div>
       <template #footer>
-        <Button label="Отмена" severity="secondary" text @click="addDomainOpen = false" />
+        <Button label="Отмена" severity="secondary" @click="addDomainOpen = false" />
         <Button label="Создать" :disabled="!newDomain.name.trim()" @click="createDomain" />
       </template>
     </Dialog>
@@ -274,7 +277,7 @@ function domainApis(d: Domain) { return d.apis; }
 .usr-exp-agent { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 0.5px solid var(--border); }
 .usr-exp-agent-n { font-family: var(--font-sans); font-size: 13px; color: var(--fg); }
 .usr-exp-agent-m { font-family: var(--font-mono); font-size: 10px; color: var(--fg-muted); }
-.req-field { margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px; }
+.dlg-fields { display: flex; flex-direction: column; gap: 26px; padding-top: 6px; }
 
 :deep(.p-datatable-thead > tr > th) { border-top: 0; border-left: 0; border-right: 0; border-bottom: 0.5px solid var(--border-strong); padding: 10px 16px; }
 :deep(.p-datatable-tbody > tr > td) { border-top: 0; border-left: 0; border-right: 0; border-bottom: 0.5px solid var(--border); padding: 12px 16px; }

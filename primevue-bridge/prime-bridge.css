@@ -68,6 +68,17 @@
 .p-dialog { border-width: 0.5px; }
 .p-popover { border-width: 0.5px; }
 
+/* Кнопка-крестик диалога — контрастная иконка (важно для тёмной темы),
+   квадратный hover, без фокус-кольца (PrimeVue автофокусит её при открытии). */
+.p-dialog-close-button { color: var(--fg) !important; border-radius: var(--r-sm); }
+.p-dialog-close-button .p-icon,
+.p-dialog-close-button svg { color: var(--fg) !important; }
+.p-dialog-close-button:hover { background: var(--surface-3) !important; }
+.p-dialog-close-button:focus,
+.p-dialog-close-button:focus-visible { outline: none !important; box-shadow: none !important; }
+/* Отступ между кнопками действий в футере */
+.p-dialog-footer { gap: 0.75rem; }
+
 /* ── Menu (popup) — hover/focus как в OES X, а не белая заливка ──────────
    Дефолтный highlight PrimeVue в тёмной теме делал текст невидимым. */
 .p-menu { background: var(--surface); border: 0.5px solid var(--border-strong); }

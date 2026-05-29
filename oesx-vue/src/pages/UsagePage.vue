@@ -10,6 +10,7 @@ import Button from 'primevue/button';
 import Textarea from 'primevue/textarea';
 import InputNumber from 'primevue/inputnumber';
 import SelectButton from 'primevue/selectbutton';
+import FloatLabel from 'primevue/floatlabel';
 import Kpi from '../components/Kpi.vue';
 import ForecastChart from '../components/ForecastChart.vue';
 import Donut from '../components/Donut.vue';
@@ -140,21 +141,23 @@ function exportReport() {
 
     <!-- Диалог повышения лимита -->
     <Dialog v-model:visible="reqOpen" modal header="Запросить повышение лимита" :style="{ width: '460px' }">
-      <div class="req-field">
-        <label class="field-label">Желаемый лимит</label>
-        <SelectButton v-model="preset" :options="presetOptions" optionLabel="label" optionValue="value" :allowEmpty="false" />
-      </div>
-      <div v-if="preset === 'custom'" class="req-field">
-        <label class="field-label">Своё значение (токенов)</label>
-        <InputNumber v-model="customVal" :min="0" :step="500000" placeholder="Например: 8500000" showButtons style="width: 100%" />
-        <span v-if="customVal" class="req-hint">{{ fmtMshort(customVal) }} токенов</span>
-      </div>
-      <div class="req-field">
-        <label class="field-label">Обоснование</label>
-        <Textarea v-model="reason" rows="4" placeholder="Почему нужен повышенный лимит…" style="width: 100%" autoResize />
+      <div class="req-stack">
+        <div class="req-field">
+          <label class="field-label">Желаемый лимит</label>
+          <SelectButton v-model="preset" :options="presetOptions" optionLabel="label" optionValue="value" :allowEmpty="false" />
+        </div>
+        <FloatLabel v-if="preset === 'custom'" variant="on">
+          <InputNumber id="cust-limit" v-model="customVal" :min="0" :step="500000" style="width: 100%" />
+          <label for="cust-limit">Своё значение (токенов)</label>
+        </FloatLabel>
+        <span v-if="preset === 'custom' && customVal" class="req-hint">{{ fmtMshort(customVal) }} токенов</span>
+        <FloatLabel variant="on">
+          <Textarea id="req-reason" v-model="reason" rows="4" style="width: 100%" autoResize />
+          <label for="req-reason">Обоснование</label>
+        </FloatLabel>
       </div>
       <template #footer>
-        <Button label="Отмена" severity="secondary" text @click="reqOpen = false" />
+        <Button label="Отмена" severity="secondary" @click="reqOpen = false" />
         <Button label="Отправить заявку" :disabled="!canSubmit" @click="submitRequest" />
       </template>
     </Dialog>
@@ -186,8 +189,9 @@ function exportReport() {
 .bd-pct { font-family: var(--font-mono); font-size: 11px; color: var(--fg-muted); width: 40px; text-align: right; }
 .bd-val { font-family: var(--font-mono); font-size: 11px; color: var(--fg); width: 56px; text-align: right; }
 
-.req-field { margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px; }
-.req-hint { font-family: var(--font-mono); font-size: 11px; color: var(--teal-400); }
+.req-stack { display: flex; flex-direction: column; gap: 24px; padding-top: 6px; }
+.req-field { display: flex; flex-direction: column; gap: 8px; }
+.req-hint { font-family: var(--font-mono); font-size: 11px; color: var(--teal-400); margin-top: -16px; }
 
 :deep(.lim-warn .p-progressbar-value) { background: var(--warn-orange); }
 :deep(.lim-danger .p-progressbar-value) { background: var(--neg); }

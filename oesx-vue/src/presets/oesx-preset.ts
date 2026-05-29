@@ -75,7 +75,6 @@ export const OESXPreset = definePreset(Aura, {
     overlay: {
       modal: {
         borderRadius: 'var(--r-lg)',
-        padding: '0',                          // паддинги задаёт modal-head/body/foot
         shadow: '0 24px 64px rgba(0,0,0,0.5)',
       },
       popover: {
@@ -138,15 +137,14 @@ export const OESXPreset = definePreset(Aura, {
     },
 
     dialog: {
+      // Только цвета/радиус — паддинги, размер заголовка и футера берём из
+      // базового Aura (иначе ломаются отступы и заголовок мельчает).
       root: {
         background: 'var(--surface)',
         borderColor: 'var(--border-strong)',
         borderRadius: 'var(--r-lg)',
         color: 'var(--fg)',
       },
-      header: { padding: '18px 22px' },
-      title: { fontSize: '15px', fontWeight: '500' },
-      content: { padding: '22px' },
     },
 
     datatable: {
@@ -198,6 +196,30 @@ export const OESXPreset = definePreset(Aura, {
     progressbar: {
       root: { background: 'var(--surface-2)', borderRadius: '2px', height: '6px' },
       value: { background: 'var(--teal-400)' },
+    },
+
+    // ToggleSwitch — только ЦВЕТОВЫЕ токены (геометрию не трогаем, иначе ломается
+    // позиционирование кружка). Цель — контраст OFF/disabled в тёмной теме.
+    // Значения через var(--token) сами переключаются по [data-theme].
+    toggleswitch: {
+      root: {
+        background: 'var(--surface-3)',            // OFF-трек
+        hoverBackground: 'var(--surface-2)',
+        borderColor: 'var(--border-strong)',       // штатный бордер → видно на карте
+        hoverBorderColor: 'var(--fg-dim)',
+        checkedBackground: 'var(--teal-400)',      // ON
+        checkedHoverBackground: 'var(--teal-300)',
+        checkedBorderColor: 'var(--teal-400)',
+        checkedHoverBorderColor: 'var(--teal-300)',
+        disabledBackground: 'var(--surface-2)',
+      },
+      handle: {
+        background: 'var(--fg-muted)',             // контрастный кружок OFF
+        hoverBackground: 'var(--fg)',
+        checkedBackground: 'var(--fg-on-teal)',
+        checkedHoverBackground: 'var(--fg-on-teal)',
+        disabledBackground: 'var(--fg-dim)',
+      },
     },
   },
 });

@@ -9,6 +9,11 @@ import { Icon } from '../icons';
 import type { IconName } from '../icons';
 import Field from '../components/Field.vue';
 import Chip from '../components/Chip.vue';
+import SettingsAgent from '../components/account/SettingsAgent.vue';
+import SettingsChannels from '../components/account/SettingsChannels.vue';
+import SettingsSources from '../components/account/SettingsSources.vue';
+import SettingsSecurity from '../components/account/SettingsSecurity.vue';
+import SettingsNotify from '../components/account/SettingsNotify.vue';
 import { currentMe } from '../user';
 import { OESDATA } from '../data';
 import { useAppState } from '../store';
@@ -135,17 +140,12 @@ function refreshContainer() {
       </div>
     </template>
 
-    <!-- ── Прочие вкладки (заглушки Фазы 1) ─────────────────────── -->
-    <template v-else>
-      <div class="card tab-stub">
-        <Icon :name="tabs.find((t) => t.id === tab)!.icon" :size="24" />
-        <div class="tab-stub-title">«{{ tabs.find((t) => t.id === tab)?.label }}» — в следующей фазе</div>
-        <div class="tab-stub-text">
-          Вкладка переносится из React-прототипа по тому же образцу, что и «Профиль»:
-          компоненты PrimeVue + bespoke-атомы на токенах OES X.
-        </div>
-      </div>
-    </template>
+    <!-- ── Прочие вкладки ───────────────────────────────────────── -->
+    <SettingsAgent v-else-if="tab === 'agent'" />
+    <SettingsChannels v-else-if="tab === 'channels'" />
+    <SettingsSources v-else-if="tab === 'sources'" />
+    <SettingsSecurity v-else-if="tab === 'security'" />
+    <SettingsNotify v-else-if="tab === 'notify'" />
   </div>
 </template>
 
