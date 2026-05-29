@@ -35,8 +35,9 @@
 ## Установка
 
 ```bash
-npm install primevue @primevue/themes
-# иконки/компоненты PrimeVue ставятся вместе с primevue@4
+npm install primevue @primeuix/themes
+# @primeuix/themes — актуальный пакет тем PrimeVue 4 (бывший @primevue/themes,
+# который теперь deprecated). definePreset/Aura импортируются из него.
 ```
 
 ### `main.ts`
