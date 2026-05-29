@@ -659,10 +659,10 @@ function CreateSolutionDropdown({ onPick, disabled, openUp }) {
       <div className="popover" style={openUp
         ? { bottom: 'calc(100% + 6px)', left: '50%', transform: 'translateX(-50%)', width: 260 }
         : { top: 'calc(100% + 6px)', left: '50%', transform: 'translateX(-50%)', width: 260 }}>
-          {Object.entries(KIND_INFO).map(([k, info]) => {
+          {CREATE_KIND_OPTIONS.map((info) => {
           const Ic = info.icon;
           return (
-            <button key={k} className="popover-item popover-item-lg" onClick={() => {setOpen(false);onPick(k);}}>
+            <button key={info.id} className="popover-item popover-item-lg" onClick={() => {setOpen(false);onPick(info.id);}}>
                 <span className="popover-icon" style={{ color: info.color }}><Ic size={14} /></span>
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ display: 'block', fontFamily: 'var(--font-sans)', fontSize: 13, color: 'var(--fg)', fontWeight: 500 }}>{info.label}</span>
@@ -741,6 +741,15 @@ function ChatHistoryDrawer({ history, activeId, onPick, onClose, onNewChat }) {
 }
 
 /* ─── Helpers / config ─── */
+
+/* Варианты в выпадашке «Создать решение» на странице Чата.
+   Зеркалит KIND_OPTIONS в shell.jsx — два пункта вместо трёх; «Алерт» и «Команда»
+   объединены в «Автоматизацию», подтип выбирается в SectionCreate. KIND_INFO ниже
+   остаётся как есть — он нужен для welcome/steps-флоу и иконок в истории чатов. */
+const CREATE_KIND_OPTIONS = [
+  { id: 'dash',       label: 'Дашборд',       icon: IconBarChart, color: 'var(--info)',     tag: 'Графики и таблицы' },
+  { id: 'automation', label: 'Автоматизация', icon: IconZap,      color: 'var(--teal-400)', tag: 'CRON-команда, алерт или Q&A — уточним в чате' },
+];
 
 const KIND_INFO = {
   dash: {

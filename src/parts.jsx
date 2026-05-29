@@ -39,10 +39,12 @@ function Chip({ kind = 'neutral', dot = false, children, style }) {
 }
 
 const KIND_CHIP_LABEL = {
-  dash: 'ДАШБОРД', alert: 'АЛЕРТ', command: 'КОМАНДА', app: 'ПРИЛОЖЕНИЕ', draft: 'ЧЕРНОВИК',
+  dash: 'ДАШБОРД', alert: 'АЛЕРТ', command: 'КОМАНДА', automation: 'АВТОМАТИЗАЦИЯ',
+  app: 'ПРИЛОЖЕНИЕ', draft: 'ЧЕРНОВИК',
 };
 const KIND_CHIP_KIND = {
-  dash: 'dash', alert: 'alert', command: 'command', app: 'app', draft: 'draft',
+  dash: 'dash', alert: 'alert', command: 'command', automation: 'command',
+  app: 'app', draft: 'draft',
 };
 function KindChip({ kind }) {
   return <Chip kind={KIND_CHIP_KIND[kind] || 'neutral'}>{KIND_CHIP_LABEL[kind] || kind}</Chip>;

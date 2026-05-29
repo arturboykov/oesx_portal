@@ -19,6 +19,7 @@ const KIND_LABEL = {
   dash: 'Дашборд',
   alert: 'Алерт',
   command: 'Команда',
+  automation: 'Автоматизация',
 };
 
 function SectionCreate({ setRoute, tweak, kind, setKind, prefill, clearPrefill, startNewChat, openChatHistory, primaryAgentName }) {
@@ -84,6 +85,12 @@ function SectionCreate({ setRoute, tweak, kind, setKind, prefill, clearPrefill, 
     setRevealed(r => Math.min(script.length, r + 1));
   };
 
+  // Выбор подтипа автоматизации (CRON-команда / что-то другое). Меняем kind —
+  // useEffect выше сбросит revealed и подгрузит обычный сценарий для нового kind.
+  const onChooseSubkind = (newKind) => {
+    setKind(newKind);
+  };
+
   const reset = () => {
     setKind(kind);
     setName(isEdit ? prefill.name : defaultNameFor(kind));
@@ -119,7 +126,7 @@ function SectionCreate({ setRoute, tweak, kind, setKind, prefill, clearPrefill, 
         </div>
         <div className="create-chat">
           <div ref={scrollRef} className="scroll-y" style={{ flex: 1, padding: '18px 18px 8px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {script.slice(0, revealed).map((m, i) => <ChatBubble key={i} m={m} botName={botName} />)}
+            {script.slice(0, revealed).map((m, i) => <ChatBubble key={i} m={m} botName={botName} onChoose={onChooseSubkind} />)}
             {revealed < script.length && <TypingBubble />}
           </div>
           <CreateChatComposer
@@ -244,7 +251,9 @@ function PreviewPane({ state, kind, name, prefill, botName }) {
       ? 'Графики и таблицы соберутся в этой области по мере уточнения задачи в чате справа.'
       : kind === 'alert'
         ? 'Шаблон уведомления и параметры срабатывания появятся здесь.'
-        : 'Описание команды, расписание и каналы появятся здесь.';
+        : kind === 'automation'
+          ? 'Сначала уточним в чате — CRON-команда или что-то другое — затем соберём превью.'
+          : 'Описание команды, расписание и каналы появятся здесь.';
     return (
       <div style={{
         minHeight: 480,
@@ -510,7 +519,7 @@ function PreviewKpiTile({ label, value, unit, tone, sub }) {
 }
 
 /* — Chat bubble — */
-function ChatBubble({ m, botName }) {
+function ChatBubble({ m, botName, onChoose }) {
   if (m.role === 'user') {
     return <div className="bubble bubble-user" style={{ maxWidth: '90%' }}>{m.text}</div>;
   }
@@ -520,6 +529,15 @@ function ChatBubble({ m, botName }) {
         <CubeLogo size={11} color="var(--teal-400)" /> {botName || 'OpenClaw'}
       </div>
       <div style={{ whiteSpace: 'pre-wrap' }}>{m.text}</div>
+      {m.choices && onChoose &&
+        <div className="bubble-suggest-row">
+          {m.choices.map((c) => (
+            <button key={c.kind} className="suggest-chip" onClick={() => onChoose(c.kind)}>
+              {c.label}
+            </button>
+          ))}
+        </div>
+      }
     </div>
   );
 }
@@ -544,6 +562,7 @@ function defaultNameFor(kind) {
     dash: 'Объём вскрыши — экскаваторы КТ',
     alert: 'Алерт — просадка КИО ниже 75%',
     command: 'Утренний дайджест по парку',
+    automation: 'Новая автоматизация',
   }[kind] || 'Новое решение';
 }
 
@@ -560,6 +579,16 @@ function buildEditScript(prefill) {
 }
 
 function buildScript(kind) {
+  if (kind === 'automation') {
+    return [
+      { role: 'bot', text: 'Здравствуйте. Какую автоматизацию собираем — команду по расписанию (CRON) или что-то другое?',
+        choices: [
+          { label: 'CRON-команда', kind: 'command' },
+          { label: 'Что-то другое', kind: 'alert' },
+        ],
+      },
+    ];
+  }
   if (kind === 'command') {
     return [
       { role: 'bot', text: 'Здравствуйте. Какую команду собираем? Опишите, что она должна делать и как запускаться — по расписанию или по запросу.' },

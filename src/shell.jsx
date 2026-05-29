@@ -255,11 +255,13 @@ const ROUTE_DEFS = [
   { id: 'admin',       label: 'Администрирование',icon: IconShield,       product: 'ADMIN',           count: null },
 ];
 
-/* Solution kinds for the Create dropdown */
+/* Solution kinds for the Create dropdown.
+   «Автоматизация» — обобщающий пункт, который в чате уточняется до CRON-команды
+   либо до уведомления по событию (бывший «Алерт»). Конкретный подтип фиксируется
+   первым шагом сценарного диалога в SectionCreate. */
 const KIND_OPTIONS = [
-  { id: 'dash',    label: 'Дашборд', icon: IconBarChart,    desc: 'Графики и таблицы по данным' },
-  { id: 'alert',   label: 'Алерт',   icon: IconAlertCircle, desc: 'Уведомление по порогу' },
-  { id: 'command', label: 'Команда', icon: IconZap,         desc: 'Вызываемая команда — действие или Q&A' },
+  { id: 'dash',       label: 'Дашборд',       icon: IconBarChart, desc: 'Графики и таблицы по данным' },
+  { id: 'automation', label: 'Автоматизация', icon: IconZap,      desc: 'CRON-команда, алерт или Q&A — уточним в чате' },
 ];
 
 function CreateButton({ openCreate, variant = 'primary', size }) {
